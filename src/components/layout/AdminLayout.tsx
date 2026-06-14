@@ -1,6 +1,6 @@
 // ============================================================
 // NEXORA V4 — Hidden Supabase Studio Layout
-// /studio and /admin are link-only, protected by Studio PIN.
+// /studio and /admin are hidden link-only Studio routes.
 // ============================================================
 
 import { type ReactNode } from 'react';
