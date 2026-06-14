@@ -263,6 +263,18 @@ create trigger set_orders_updated_at before update on public.orders for each row
 create trigger set_coupons_updated_at before update on public.coupons for each row execute function public.set_updated_at();
 create trigger set_reviews_updated_at before update on public.reviews for each row execute function public.set_updated_at();
 
+
+
+create or replace function public.increment_coupon_usage(code_value text)
+returns void language plpgsql security definer as $$
+begin
+  update public.coupons
+  set used_count = coalesce(used_count, 0) + 1,
+      updated_at = now()
+  where code = upper(code_value);
+end;
+$$;
+
 create index if not exists idx_products_status_gender on public.products(status, gender);
 create index if not exists idx_products_limited on public.products(is_limited, status);
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
