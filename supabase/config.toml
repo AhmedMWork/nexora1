@@ -1,0 +1,34 @@
+project_id = "ccmuazjkgzjqzybxwrfd"
+
+[functions.verify-studio-access]
+verify_jwt = false
+
+[functions.create-order]
+verify_jwt = false
+
+[functions.validate-coupon]
+verify_jwt = false
+
+[functions.studio-products]
+verify_jwt = false
+
+[functions.studio-orders]
+verify_jwt = false
+
+[functions.studio-reviews]
+verify_jwt = false
+
+[functions.studio-drops]
+verify_jwt = false
+
+[functions.studio-coupons]
+verify_jwt = false
+
+[functions.studio-promotions]
+verify_jwt = false
+
+[functions.studio-settings]
+verify_jwt = false
+
+[functions.studio-dashboard]
+verify_jwt = false

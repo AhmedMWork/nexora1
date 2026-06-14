@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /studio
+Disallow: /admin
+Disallow: /nexora-admin
+
+Sitemap: https://nexoratest-nu.vercel.app/sitemap.xml
