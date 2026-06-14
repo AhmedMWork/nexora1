@@ -1,0 +1,63 @@
+// ============================================================
+// NEXORA — Egyptian Governorates & Cities
+// ============================================================
+
+import type { EgyptianGovernorate } from '@/types';
+
+export const EGYPTIAN_GOVERNORATES: EgyptianGovernorate[] = [
+  { name: 'Cairo', cities: ['Nasr City', 'Maadi', 'Heliopolis', 'New Cairo', 'Zamalek', 'Downtown', 'Mohandessin', 'Garden City', 'Shubra', 'Mokattam', 'Ain Shams', 'Helwan', 'Madinet Nasr', 'Tagamo3'] },
+  { name: 'Giza', cities: ['Dokki', 'Mohandessin', 'Agouza', 'Haram', 'Faisal', 'Imbaba', 'Warraq', 'Sheikh Zayed', '6th of October', 'Hawamdiya', 'Badrasheen', 'Ayat', 'Saf'] },
+  { name: 'Alexandria', cities: ['Montaza', 'Sidi Gaber', 'Smouha', 'Gleem', 'Stanley', 'Roushdy', 'Sidi Bishr', 'Miami', 'Agami', 'Borg El Arab', 'King Mariout', 'Amreya'] },
+  { name: 'North Sinai', cities: ['El Arish', 'Sheikh Zuweid', 'Rafah', 'Bir El Abd', 'Hassana', 'Nekhel'] },
+  { name: 'South Sinai', cities: ['Sharm El Sheikh', 'Dahab', 'Nuweiba', 'Taba', 'Saint Catherine', 'Tor', 'Abu Redis'] },
+  { name: 'Port Said', cities: ['Port Said City', 'Port Fouad', 'Al Arab', 'Al Manakh', 'Al Dawahy', 'Al Janoub'] },
+  { name: 'Suez', cities: ['Suez City', 'Arbaeen', 'Attaka', 'Faisal', 'Ganayen'] },
+  { name: 'Ismailia', cities: ['Ismailia City', 'Fayed', 'Kantara', 'Abu Swear', 'El Tal El Kebir', 'Qassaseen'] },
+  { name: 'Sharqia', cities: ['Zagazig', '10th of Ramadan', 'Belbeis', 'Minya El Qamh', 'Abu Hammad', 'Faqous', 'Diyarb Negm', 'Hihya', 'Kafr Saqr', 'Mashtool El Souk'] },
+  { name: 'Qalyubia', cities: ['Banha', 'Shubra El Kheima', 'Qalyub', 'Khanka', 'Kafr Shukr', 'Tukh', 'Qanater El Khayreya', 'El Obour', 'Khusus'] },
+  { name: 'Kafr El Sheikh', cities: ['Kafr El Sheikh', 'Desouk', 'Fuwwah', 'Baltim', 'Sidi Salem', 'Riyadh', 'Bella', 'Qelein', 'Metobas'] },
+  { name: 'Gharbia', cities: ['Tanta', 'El Mahalla El Kubra', 'Kafr El Zayat', 'Zifta', 'Samanoud', 'El Sunta', 'Qutour', 'Basyoun'] },
+  { name: 'Dakahlia', cities: ['Mansoura', 'Mit Ghamr', 'Talkha', 'Aga', 'Mansoura University', 'Sinbillaween', 'El Manzala', 'Dikirnis', 'Sherbin', 'Belqas', 'Meet El Kholy'] },
+  { name: 'Damietta', cities: ['Damietta City', 'New Damietta', 'Ras El Bar', 'Farskor', 'Kafr Saad', 'El Zarqa'] },
+  { name: 'Beheira', cities: ['Damanhour', 'Kafr El Dawwar', 'Rashid', 'Edko', 'Abu El Matamer', 'Hosh Essa', 'Etay El Baroud', 'Kom Hamada', 'Delengat', 'Shubrakhit', 'Wadi El Natrun'] },
+  { name: 'Minya', cities: ['Minya City', 'Mallawi', 'Samalut', 'Beni Mazar', 'Deir Mawas', 'Maghagha', 'Adwa', 'Matai', 'Abu Qurqas', 'New Minya'] },
+  { name: 'Faiyum', cities: ['Faiyum City', 'Tamiya', 'Sinnuris', 'Ibsheway', 'Yousef El Seddik', 'Atssa', 'Ihnasya'] },
+  { name: 'Beni Suef', cities: ['Beni Suef City', 'Wasta', 'Nasser', 'Ehnasia', 'Beba', 'Fashn', 'Samasta', 'Al Wadi'] },
+  { name: 'Asyut', cities: ['Asyut City', 'Dairut', 'Manfalut', 'Qusiya', 'Abnub', 'Abu Tig', 'El Badari', 'Sahel Selim', 'El Ghanayem', 'Sedfa'] },
+  { name: 'Sohag', cities: ['Sohag City', 'Akhmim', 'Tahta', 'Tama', 'Gerga', 'Baliana', 'Dar El Salam', 'Monshaat', 'El Maragha', 'Juhaynah'] },
+  { name: 'Qena', cities: ['Qena City', 'Nag Hammadi', 'Dishna', 'Qus', 'Farshut', 'Abu Tesht', 'Naqada', 'Wakf'] },
+  { name: 'Luxor', cities: ['Luxor City', 'Armant', 'Esna', 'Tod', 'Qurna', 'Bayadeya', 'El Toud', 'El Kab'] },
+  { name: 'Aswan', cities: ['Aswan City', 'Kom Ombo', 'Edfu', 'Daraw', 'Nasr El Nuba', 'El Basaliya', 'Abu Simbel', 'New Aswan', 'Sebaeaya'] },
+  { name: 'Red Sea', cities: ['Hurghada', 'El Gouna', 'Safaga', 'Marsa Alam', 'Ras Gharib', 'Shalateen', 'Halaib'] },
+  { name: 'Matrouh', cities: ['Marsa Matrouh', 'El Hamam', 'Siwa Oasis', 'El Dabaa', 'Sidi Barrani', 'El Alamein', 'Neguila', 'Sallum'] },
+  { name: 'New Valley', cities: ['Kharga', 'Dakhla', 'Baris', 'Farafra', 'Balat', 'Mut', 'Paris', 'Toshka'] },
+  { name: 'Monufia', cities: ['Shebin El Koum', 'Sadat City', 'Menouf', 'Tala', 'Ashmoun', 'Quesna', 'Berket El Saba', 'El Bagour', 'Shohada', 'Sers El Layan'] },
+];
+
+export function getCitiesForGovernorate(governorateName: string): string[] {
+  const governorate = EGYPTIAN_GOVERNORATES.find(g => g.name === governorateName);
+  return governorate?.cities || [];
+}
+
+export function getGovernorateNames(): string[] {
+  return EGYPTIAN_GOVERNORATES.map(g => g.name);
+}
+
+// Egyptian phone validation regex
+export const EGYPTIAN_PHONE_REGEX = /^(01)[0-2,5]{1}[0-9]{8}$/;
+
+// WhatsApp link generator
+export function generateWhatsAppLink(phone: string, message?: string): string {
+  const digits = phone.replace(/[^0-9]/g, '');
+  const internationalPhone = digits.startsWith('20') ? digits : `2${digits}`;
+  const encodedMessage = message ? encodeURIComponent(message) : '';
+  return `https://wa.me/${internationalPhone}${encodedMessage ? `?text=${encodedMessage}` : ''}`;
+}
+
+// Governorate select options
+export function getGovernorateOptions(): { value: string; label: string }[] {
+  return EGYPTIAN_GOVERNORATES.map(g => ({
+    value: g.name,
+    label: g.name,
+  }));
+}
