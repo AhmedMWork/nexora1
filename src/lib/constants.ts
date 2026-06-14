@@ -5,7 +5,7 @@
 export const SITE_NAME = 'NEXORA';
 export const SITE_TAGLINE = 'Quiet Luxury. Limited By Design.';
 export const SITE_DESCRIPTION = 'Limited fashion essentials by NEXORA. Refined silhouettes, COD ordering, and a world-class ivory noir experience.';
-export const SITE_URL = 'https://nexora.store';
+export const SITE_URL = 'https://nexora1-one.vercel.app';
 
 export const NAV_LINKS = [
   { label: 'Shop', href: '/shop' },

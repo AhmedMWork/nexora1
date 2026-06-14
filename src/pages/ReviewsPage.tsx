@@ -35,7 +35,7 @@ export default function ReviewsPage() {
     <>
       <Helmet>
         <title>Reviews | NEXORA — Curated Customer Notes</title>
-        <meta name="description" content="Read curated customer notes selected by the NEXORA studio." />
+        <meta name="description" content="Read curated customer notes selected by NEXORA." />
       </Helmet>
 
       <div className="pt-24 pb-20 bg-[#050505] min-h-screen">
@@ -68,7 +68,7 @@ export default function ReviewsPage() {
           </SectionReveal>
 
           {isLoading ? (
-            <div className="p-10 text-center text-xs text-[#8a8175] bg-[#0b0b0d] border border-[#17171a]">Loading studio reviews...</div>
+            <div className="p-10 text-center text-xs text-[#8a8175] bg-[#0b0b0d] border border-[#17171a]">Loading reviews...</div>
           ) : reviews.length ? (
             <div className="grid md:grid-cols-2 gap-4">
               {reviews.map((review, i) => (
@@ -90,7 +90,7 @@ export default function ReviewsPage() {
               ))}
             </div>
           ) : (
-            <div className="p-10 text-center text-xs text-[#8a8175] bg-[#0b0b0d] border border-[#17171a]">No studio reviews have been published yet.</div>
+            <div className="p-10 text-center text-xs text-[#8a8175] bg-[#0b0b0d] border border-[#17171a]">No reviews have been published yet.</div>
           )}
         </div>
       </div>

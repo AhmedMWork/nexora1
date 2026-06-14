@@ -219,6 +219,89 @@ function rowToCoupon(row: Record<string, any>): Coupon {
   };
 }
 
+
+function listToJson(value: unknown): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string') return value.split(',').map((v) => v.trim()).filter(Boolean);
+  return [];
+}
+
+function toIso(value: unknown): string | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) return value.toISOString();
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+function couponToRow(coupon: Partial<Coupon>): Record<string, any> {
+  const row: Record<string, any> = {
+    code: coupon.code ? String(coupon.code).trim().toUpperCase() : undefined,
+    title: coupon.title,
+    description: coupon.description,
+    type: coupon.type,
+    value: coupon.value,
+    min_order_amount: coupon.minOrderAmount,
+    max_discount_amount: coupon.maxDiscountAmount,
+    usage_limit: coupon.usageLimit,
+    used_count: coupon.usedCount,
+    per_customer_limit: coupon.perCustomerLimit,
+    start_date: toIso(coupon.startDate),
+    end_date: toIso(coupon.endDate),
+    status: coupon.status || (coupon.isActive === false ? 'paused' : coupon.isActive === true ? 'active' : undefined),
+    allowed_product_ids: coupon.allowedProductIds,
+    excluded_product_ids: coupon.excludedProductIds,
+    allowed_categories: coupon.allowedCategories,
+    excluded_categories: coupon.excludedCategories,
+    first_order_only: coupon.firstOrderOnly,
+  };
+  Object.keys(row).forEach((key) => row[key] === undefined && delete row[key]);
+  return row;
+}
+
+function rowToPromotion(row: Record<string, any>): Promotion {
+  return {
+    id: row.id,
+    title: row.title || '',
+    subtitle: row.subtitle || '',
+    type: row.type || 'storewide',
+    discountType: row.discount_type || row.discountType || 'percentage',
+    discountValue: Number(row.discount_value || row.discountValue || 0),
+    targetIds: listToJson(row.target_ids || row.targetIds),
+    status: row.status || 'draft',
+    startDate: toDate(row.start_date || row.startDate),
+    endDate: toDate(row.end_date || row.endDate),
+    bannerText: row.banner_text || row.bannerText || '',
+    showOnHome: Boolean(row.show_on_home ?? row.showOnHome),
+    showOnProduct: Boolean(row.show_on_product ?? row.showOnProduct),
+    showOnCart: Boolean(row.show_on_cart ?? row.showOnCart),
+    showCountdown: Boolean(row.show_countdown ?? row.showCountdown),
+    createdAt: toDate(row.created_at || row.createdAt),
+    updatedAt: row.updated_at ? toDate(row.updated_at) : undefined,
+  };
+}
+
+function promotionToRow(promotion: Partial<Promotion>): Record<string, any> {
+  const row: Record<string, any> = {
+    title: promotion.title,
+    subtitle: promotion.subtitle,
+    type: promotion.type,
+    discount_type: promotion.discountType,
+    discount_value: promotion.discountValue,
+    target_ids: promotion.targetIds,
+    status: promotion.status,
+    start_date: toIso(promotion.startDate),
+    end_date: toIso(promotion.endDate),
+    banner_text: promotion.bannerText,
+    show_on_home: promotion.showOnHome,
+    show_on_product: promotion.showOnProduct,
+    show_on_cart: promotion.showOnCart,
+    show_countdown: promotion.showCountdown,
+  };
+  Object.keys(row).forEach((key) => row[key] === undefined && delete row[key]);
+  return row;
+}
+
 function studioHeadersPayload<T extends Record<string, unknown>>(action: string, payload: T): T & { action: string } {
   return { action, ...payload };
 }
@@ -316,17 +399,17 @@ export async function validateCouponForCart(payload: { code: string; items: Arra
 }
 
 export async function createCoupon(coupon: Omit<Coupon, 'id' | 'createdAt'>): Promise<string> {
-  const data = await invokeStudioFunction('studio-coupons', studioHeadersPayload('create', { coupon }));
+  const data = await invokeStudioFunction('studio-coupons', studioHeadersPayload('create', { coupon: couponToRow(coupon) }));
   return (data as any).id;
 }
-export async function updateCoupon(id: string, data: Partial<Coupon>): Promise<void> { await invokeStudioFunction('studio-coupons', studioHeadersPayload('update', { id, coupon: data })); }
+export async function updateCoupon(id: string, data: Partial<Coupon>): Promise<void> { await invokeStudioFunction('studio-coupons', studioHeadersPayload('update', { id, coupon: couponToRow(data) })); }
 export async function deleteCoupon(id: string): Promise<void> { await invokeStudioFunction('studio-coupons', studioHeadersPayload('delete', { id })); }
 
 // Promotions
-export async function getPromotions(): Promise<Promotion[]> { const data = await invokeStudioFunction<Record<string, unknown>, { promotions: Promotion[] }>('studio-promotions', { action: 'list' }); return data.promotions || []; }
-export async function getActivePromotions(): Promise<Promotion[]> { return getPromotions(); }
-export async function createPromotion(promotion: Omit<Promotion, 'id' | 'createdAt'>): Promise<string> { const data = await invokeStudioFunction('studio-promotions', studioHeadersPayload('create', { promotion })); return (data as any).id; }
-export async function updatePromotion(id: string, data: Partial<Promotion>): Promise<void> { await invokeStudioFunction('studio-promotions', studioHeadersPayload('update', { id, promotion: data })); }
+export async function getPromotions(): Promise<Promotion[]> { const data = await invokeStudioFunction<Record<string, unknown>, { promotions: any[] }>('studio-promotions', { action: 'list' }); return (data.promotions || []).map(rowToPromotion); }
+export async function getActivePromotions(): Promise<Promotion[]> { return (await getPromotions()).filter((promotion) => promotion.status === 'active'); }
+export async function createPromotion(promotion: Omit<Promotion, 'id' | 'createdAt'>): Promise<string> { const data = await invokeStudioFunction('studio-promotions', studioHeadersPayload('create', { promotion: promotionToRow(promotion) })); return (data as any).id; }
+export async function updatePromotion(id: string, data: Partial<Promotion>): Promise<void> { await invokeStudioFunction('studio-promotions', studioHeadersPayload('update', { id, promotion: promotionToRow(data) })); }
 export async function deletePromotion(id: string): Promise<void> { await invokeStudioFunction('studio-promotions', studioHeadersPayload('delete', { id })); }
 
 // Drops

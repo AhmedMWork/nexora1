@@ -13,7 +13,6 @@ import { useCartStore } from '@/stores/cartStore';
 import { checkoutSchema, type CheckoutFormData } from '@/lib/validators';
 import { getGovernorateNames, getCitiesForGovernorate, generateWhatsAppLink } from '@/lib/egyptData';
 import { formatPrice, generateOrderNumber } from '@/lib/utils';
-import { SHIPPING_FEE, FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 import SectionReveal from '@/components/ui/SectionReveal';
 import EmptyState from '@/components/ui/EmptyState';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -31,9 +30,11 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number; freeShipping?: boolean } | null>(null);
   const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
+  const [shippingFee, setShippingFee] = useState(0);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
 
   const subtotal = getTotalPrice();
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD || appliedCoupon?.freeShipping ? 0 : SHIPPING_FEE;
+  const shipping = (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) || appliedCoupon?.freeShipping ? 0 : shippingFee;
   const discount = appliedCoupon?.discount || 0;
   const total = Math.max(0, subtotal - discount + shipping);
 
@@ -57,6 +58,10 @@ export default function CheckoutPage() {
       .then(({ getSiteSettings }) => getSiteSettings())
       .then((settings) => {
         if (mounted && settings?.whatsappNumber) setWhatsAppNumber(settings.whatsappNumber);
+        if (mounted && settings) {
+          setShippingFee(Number(settings.shippingFee || 0));
+          setFreeShippingThreshold(Number(settings.freeShippingThreshold || 0));
+        }
       })
       .catch(() => undefined);
     return () => { mounted = false; };
