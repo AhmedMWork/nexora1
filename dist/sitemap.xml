@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://nexora1-one.vercel.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/shop</loc><priority>0.9</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/shop/men</loc><priority>0.8</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/shop/women</loc><priority>0.8</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/shop/unisex</loc><priority>0.8</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/limited</loc><priority>0.7</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/reviews</loc><priority>0.6</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/contact</loc><priority>0.6</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/about</loc><priority>0.5</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/shipping-returns</loc><priority>0.5</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/privacy</loc><priority>0.3</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/terms</loc><priority>0.3</priority></url>
+</urlset>

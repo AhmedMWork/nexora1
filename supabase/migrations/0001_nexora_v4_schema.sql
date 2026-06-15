@@ -177,7 +177,7 @@ create table if not exists public.reviews (
   product_id uuid references public.products(id) on delete set null,
   product_name text,
   customer_name text not null,
-  rating integer check (rating between 1 and 5) default 5,
+  rating numeric(2,1) check (rating >= 0.5 and rating <= 5) default 5,
   title text,
   body_en text not null,
   body_ar text,
@@ -245,6 +245,20 @@ create table if not exists public.newsletter (
   subscribed_at timestamptz default now()
 );
 
+
+
+create table if not exists public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  event_name text not null,
+  session_id text,
+  path text,
+  referrer text,
+  language text,
+  device text,
+  payload jsonb default '{}'::jsonb,
+  created_at timestamptz default now()
+);
+
 create table if not exists public.contact_messages (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -280,3 +294,6 @@ create index if not exists idx_products_limited on public.products(is_limited, s
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 create index if not exists idx_reviews_status_featured on public.reviews(status, featured);
 create index if not exists idx_drops_status on public.drops(status);
+
+create index if not exists idx_analytics_events_created on public.analytics_events(created_at desc);
+create index if not exists idx_analytics_events_name on public.analytics_events(event_name);

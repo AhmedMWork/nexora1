@@ -17,6 +17,7 @@ alter table public.inventory_logs enable row level security;
 alter table public.audit_logs enable row level security;
 alter table public.newsletter enable row level security;
 alter table public.contact_messages enable row level security;
+alter table public.analytics_events enable row level security;
 
 -- Drop older policies before recreating them safely.
 drop policy if exists "Public can read active products" on public.products;
@@ -26,6 +27,7 @@ drop policy if exists "Public can read published reviews" on public.reviews;
 drop policy if exists "Public can read settings" on public.site_settings;
 drop policy if exists "Public can subscribe newsletter" on public.newsletter;
 drop policy if exists "Public can create contact messages" on public.contact_messages;
+drop policy if exists "Public can insert analytics events" on public.analytics_events;
 
 create policy "Public can read active products" on public.products for select using (status in ('active','sold_out'));
 create policy "Public can read product images" on public.product_images for select using (true);
@@ -34,6 +36,7 @@ create policy "Public can read published reviews" on public.reviews for select u
 create policy "Public can read settings" on public.site_settings for select using (id = 'main');
 create policy "Public can subscribe newsletter" on public.newsletter for insert with check (true);
 create policy "Public can create contact messages" on public.contact_messages for insert with check (true);
+create policy "Public can insert analytics events" on public.analytics_events for insert with check (true);
 
 -- No direct public policies for admin writes, order reads, coupons reads, inventory, or audit logs.
 -- Edge Functions use SUPABASE_SERVICE_ROLE_KEY and Studio token verification.
