@@ -95,3 +95,9 @@ create index if not exists orders_status_idx on orders(order_status);
 create index if not exists orders_customer_phone_idx on orders(customer_phone);
 create index if not exists orders_created_idx on orders(created_at desc);
 create index if not exists coupons_code_idx on coupons(code);
+
+
+-- V4.9 Fix: selected product color metadata for customer orders.
+alter table if exists order_items add column if not exists color text;
+alter table if exists order_items add column if not exists color_hex text;
+alter table if exists order_items add column if not exists color_pattern text;

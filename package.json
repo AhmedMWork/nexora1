@@ -1,7 +1,7 @@
 {
-  "name": "nexora-v4-9-global-launch-final",
+  "name": "nexora-v4-9-fix-production-polish",
   "private": true,
-  "version": "4.9.0",
+  "version": "4.9.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -90,5 +90,5 @@
     "node": "20.x",
     "npm": ">=10"
   },
-  "description": "NEXORA V4.9 Global Luxury Commerce Final — Supabase, Studio, analytics, SEO, QA, and launch package"
+  "description": "NEXORA V4.9 Fix \u2014 Production Polish, Supabase data readiness, product color/size selection, admin UX, analytics, and routing stability."
 }

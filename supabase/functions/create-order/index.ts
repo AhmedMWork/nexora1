@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { corsHeaders, json, serviceClient } from '../_shared/studio.ts';
 
-type CartItem = { productId: string; size: string; quantity: number; slug?: string; image?: string; color?: string };
+type CartItem = { productId: string; size: string; quantity: number; slug?: string; image?: string; color?: string; colorHex?: string; colorPattern?: string };
 
 function orderNumber() {
   const d = new Date();
@@ -73,6 +73,8 @@ Deno.serve(async (req) => {
         slug: product.slug,
         size,
         color: item.color || null,
+        color_hex: item.colorHex || null,
+        color_pattern: item.colorPattern || null,
         quantity: qty,
         unit_price: unitPrice,
         total: unitPrice * qty,

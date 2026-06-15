@@ -297,3 +297,9 @@ create index if not exists idx_drops_status on public.drops(status);
 
 create index if not exists idx_analytics_events_created on public.analytics_events(created_at desc);
 create index if not exists idx_analytics_events_name on public.analytics_events(event_name);
+
+
+-- V4.9 Fix: selected product color metadata for customer orders.
+alter table if exists order_items add column if not exists color text;
+alter table if exists order_items add column if not exists color_hex text;
+alter table if exists order_items add column if not exists color_pattern text;
