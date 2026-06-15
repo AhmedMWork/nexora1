@@ -16,7 +16,6 @@ import { ThemeProvider } from '@/providers/ThemeProvider';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import ErrorBoundary from '@/components/system/ErrorBoundary';
 import { trackEvent } from '@/services/analytics.service';
-import ErrorBoundary from './components/system/ErrorBoundary';
 
 // ─── Lazy-loaded Pages ───
 const HomePage = lazy(() => import('@/pages/HomePage'));
