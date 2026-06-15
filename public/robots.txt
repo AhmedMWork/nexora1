@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /nexora-admin
 Disallow: /studio
 Disallow: /admin
-Disallow: /nexora-admin
 
 Sitemap: https://nexora1-one.vercel.app/sitemap.xml

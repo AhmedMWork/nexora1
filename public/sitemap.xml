@@ -5,13 +5,12 @@
   <url><loc>https://nexora1-one.vercel.app/shop/men</loc><priority>0.8</priority></url>
   <url><loc>https://nexora1-one.vercel.app/shop/women</loc><priority>0.8</priority></url>
   <url><loc>https://nexora1-one.vercel.app/shop/unisex</loc><priority>0.8</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/limited</loc><priority>0.8</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/reviews</loc><priority>0.7</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/contact</loc><priority>0.7</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/info/about</loc><priority>0.6</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/info/size-guide</loc><priority>0.6</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/info/shipping-returns</loc><priority>0.6</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/info/faq</loc><priority>0.6</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/info/privacy</loc><priority>0.5</priority></url>
-  <url><loc>https://nexora1-one.vercel.app/info/terms</loc><priority>0.5</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/limited</loc><priority>0.7</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/reviews</loc><priority>0.6</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/contact</loc><priority>0.6</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/about</loc><priority>0.5</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/shipping-returns</loc><priority>0.5</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/privacy</loc><priority>0.3</priority></url>
+  <url><loc>https://nexora1-one.vercel.app/info/terms</loc><priority>0.3</priority></url>
 </urlset>
