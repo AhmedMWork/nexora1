@@ -1,12 +1,21 @@
+import type { SVGProps } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Facebook, Instagram, MessageCircle, Music2 } from 'lucide-react';
+import { Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { useI18n } from '@/i18n/I18nProvider';
+
+function TikTokIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M16.6 3c.45 2.7 1.95 4.35 4.4 4.55v3.35a8.25 8.25 0 0 1-4.28-1.25v5.95c0 3.25-2.16 5.4-5.35 5.4-3.06 0-5.37-2.2-5.37-5.1 0-3.06 2.42-5.28 5.78-5.28.35 0 .68.03 1 .1v3.42a3.6 3.6 0 0 0-1.04-.16c-1.32 0-2.21.75-2.21 1.86 0 1.06.82 1.8 1.95 1.8 1.24 0 2.02-.77 2.02-2.1V3h3.1Z" />
+    </svg>
+  );
+}
 
 const socialLinks = [
   { label: 'Instagram', href: '#', Icon: Instagram },
   { label: 'Facebook', href: '#', Icon: Facebook },
-  { label: 'TikTok', href: '#', Icon: Music2 },
+  { label: 'TikTok', href: '#', Icon: TikTokIcon },
   { label: 'WhatsApp', href: 'https://wa.me/201037141322', Icon: MessageCircle },
 ];
 

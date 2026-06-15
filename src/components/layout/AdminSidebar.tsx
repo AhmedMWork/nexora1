@@ -44,7 +44,7 @@ export default function AdminSidebar() {
   const navigate = useNavigate();
 
   const sidebarClasses = `
-    fixed top-0 left-0 z-40 h-screen bg-[#171311] border-r border-[#4A3D37]
+    fixed top-0 left-0 z-40 h-screen bg-[#0F1115] border-r border-[#2E3442]
     transition-all duration-300 flex flex-col
     ${isCollapsed ? 'w-20' : 'w-64'}
     ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -55,7 +55,7 @@ export default function AdminSidebar() {
       {/* Mobile Toggle */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-[#231D1A] border border-[#4A3D37] text-[#E9DED3]"
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-[#171A21] border border-[#2E3442] text-[#F5F1EA]"
       >
         {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
@@ -71,7 +71,7 @@ export default function AdminSidebar() {
       {/* Sidebar */}
       <aside className={sidebarClasses}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[#4A3D37] h-16">
+        <div className="flex items-center justify-between p-4 border-b border-[#2E3442] h-16">
           {!isCollapsed && (
             <Link to="/nexora-admin/dashboard" className="flex items-center gap-2">
               <img
@@ -79,12 +79,12 @@ export default function AdminSidebar() {
                 alt="NEXORA"
                 className="h-7 w-auto object-contain"
               />
-              <span className="text-[10px] font-bold tracking-[0.2em] text-[#BBAEA4]">STUDIO</span>
+              <span className="text-[10px] font-bold tracking-[0.2em] text-[#A7AEBB]">STUDIO</span>
             </Link>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:flex p-1.5 text-[#A99A91] hover:text-[#E9DED3] transition-colors"
+            className="hidden lg:flex p-1.5 text-[#A7AEBB] hover:text-[#F5F1EA] transition-colors"
           >
             <ChevronLeft
               className={`w-4 h-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
@@ -105,8 +105,8 @@ export default function AdminSidebar() {
                 onClick={() => setIsMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 text-xs font-medium tracking-wider uppercase transition-all duration-200 rounded ${
                   isActive
-                    ? 'bg-[#C7A191]/10 text-[#C7A191] border-l-2 border-[#C7A191]'
-                    : 'text-[#A99A91] hover:text-[#E9DED3] hover:bg-[#231D1A]'
+                    ? 'bg-[#D7B98E]/12 text-[#D7B98E] border-l-2 border-[#D7B98E]'
+                    : 'text-[#A7AEBB] hover:text-[#F5F1EA] hover:bg-[#231D1A]'
                 }`}
                 title={isCollapsed ? link.label : undefined}
               >
@@ -118,18 +118,18 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Store + Logout */}
-        <div className="p-2 border-t border-[#4A3D37] space-y-1">
+        <div className="p-2 border-t border-[#2E3442] space-y-1">
           <Link
             to="/"
             onClick={() => setIsMobileOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 w-full text-xs font-medium tracking-wider uppercase text-[#A99A91] hover:text-[#C7A191] hover:bg-[#231D1A] transition-all rounded"
+            className="flex items-center gap-3 px-3 py-2.5 w-full text-xs font-medium tracking-wider uppercase text-[#A7AEBB] hover:text-[#D7B98E] hover:bg-[#171A21] transition-all rounded"
           >
             <ExternalLink className="w-4 h-4" />
             {!isCollapsed && <span>View Store</span>}
           </Link>
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-3 px-3 py-2.5 w-full text-xs font-medium tracking-wider uppercase text-[#A99A91] hover:text-[#C7A191] hover:bg-[#231D1A] transition-all rounded"
+            className="flex items-center gap-3 px-3 py-2.5 w-full text-xs font-medium tracking-wider uppercase text-[#A7AEBB] hover:text-[#D7B98E] hover:bg-[#171A21] transition-all rounded"
           >
             <ExternalLink className="w-4 h-4" />
             {!isCollapsed && <span>Close Studio</span>}
