@@ -5,8 +5,10 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useI18n } from '@/i18n/I18nProvider';
 
 export default function SplashScreen() {
+  const { t } = useI18n();
   const [isLeaving, setIsLeaving] = useState(false);
   const [isVisible, setIsVisible] = useState(() => sessionStorage.getItem('nexora-entry-v34') !== 'entered');
 
@@ -49,6 +51,18 @@ export default function SplashScreen() {
             animate={{ scale: [1, 1.035, 1], opacity: [0.46, 0.9, 0.46] }}
             transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
           />
+          <motion.span
+            aria-hidden="true"
+            className="absolute inset-[-18px] rounded-full border border-dashed border-[color-mix(in_srgb,var(--v33-accent-strong)_62%,transparent)] opacity-80"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.span
+            aria-hidden="true"
+            className="absolute inset-[-34px] rounded-full border border-[color-mix(in_srgb,var(--v33-border)_70%,transparent)] opacity-50"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+          />
           <motion.img
             src="/assets/nexora-logo-dark.png"
             alt="NEXORA"
@@ -64,7 +78,7 @@ export default function SplashScreen() {
             transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
           />
           <span className="absolute bottom-8 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.38em] text-[var(--v33-muted)] opacity-75 transition-opacity group-hover:opacity-100">
-            Tap Logo To Enter
+            {t('splash.tap')}
           </span>
         </motion.button>
       </motion.div>

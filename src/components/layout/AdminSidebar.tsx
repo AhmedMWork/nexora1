@@ -10,14 +10,15 @@ import {
   Warehouse,
   Star,
   Tag,
-  Settings,
-  BadgePercent,
   CalendarClock,
+  BarChart3,
+  UserRound,
+  SearchCheck,
+  ShieldCheck,
   ChevronLeft,
   Menu,
   X,
   ExternalLink,
-  ShieldCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 import { ADMIN_NAV_LINKS } from '@/lib/constants';
@@ -29,9 +30,10 @@ const iconMap: Record<string, React.ElementType> = {
   Warehouse,
   Star,
   Tag,
-  Settings,
-  BadgePercent,
   CalendarClock,
+  BarChart3,
+  UserRound,
+  SearchCheck,
   ShieldCheck,
 };
 
