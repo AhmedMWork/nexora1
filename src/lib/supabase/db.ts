@@ -174,6 +174,9 @@ function rowToOrder(row: Record<string, any>, items: any[] = []): Order {
 }
 
 function rowToReview(row: Record<string, any>): Review {
+  const images = Array.isArray(row.images)
+    ? row.images.map((image: any) => typeof image === 'string' ? image : (image.public_url || image.url)).filter(Boolean)
+    : [row.review_image_url, row.avatar_url].filter(Boolean);
   return {
     id: row.id,
     productId: row.product_id || row.productId || '',
@@ -181,8 +184,8 @@ function rowToReview(row: Record<string, any>): Review {
     customerName: row.customer_name || row.customerName || '',
     rating: Number(row.rating || 5),
     title: row.title || '',
-    body: row.body || row.body_en || '',
-    images: Array.isArray(row.images) ? row.images : [],
+    body: row.body || row.body_en || row.body_ar || '',
+    images,
     isApproved: row.status ? row.status === 'published' : Boolean(row.isApproved ?? row.is_approved ?? true),
     isFeatured: Boolean(row.featured ?? row.isFeatured ?? row.is_featured),
     helpfulCount: Number(row.helpful_count || row.helpfulCount || 0),
@@ -491,4 +494,11 @@ export async function getInventoryLogs(productId?: string): Promise<InventoryLog
 export async function createAuditLog(log: Omit<AuditLog, 'id' | 'createdAt'>): Promise<string> { const data = await invokeStudioFunction('studio-settings', studioHeadersPayload('audit-log', { log })); return (data as any).id; }
 export async function getAuditLogs(): Promise<AuditLog[]> { const data = await invokeStudioFunction<Record<string, unknown>, { logs: AuditLog[] }>('studio-settings', { action: 'audit-logs' }); return data.logs || []; }
 export async function getDashboardStats(): Promise<{ totalOrders: number; totalRevenue: number; totalProducts: number; pendingOrders: number; lowStockProducts: number; activeCoupons: number; liveDrops: number; activePromotions: number }> { const data = await invokeStudioFunction<Record<string, unknown>, any>('studio-dashboard', { action: 'stats' }); return { totalOrders: data.totalOrders || 0, totalRevenue: data.totalRevenue || 0, totalProducts: data.totalProducts || 0, pendingOrders: data.pendingOrders || 0, lowStockProducts: data.lowStockProducts || 0, activeCoupons: data.activeCoupons || 0, liveDrops: data.liveDrops || 0, activePromotions: data.activePromotions || 0 }; }
+
+
+export async function getAnalyticsSummary(): Promise<{ events: any[]; orders: any[] }> {
+  const data = await invokeStudioFunction<Record<string, unknown>, { events: any[]; orders: any[] }>('studio-dashboard', { action: 'analytics' });
+  return { events: data.events || [], orders: data.orders || [] };
+}
+
 export async function seedDatabase(products: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<void> { await invokeStudioFunction('studio-products', studioHeadersPayload('seed', { products: products.map(productToRow) })); }

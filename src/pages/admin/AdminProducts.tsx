@@ -1,27 +1,28 @@
-// ============================================================
-// NEXORA — Admin Products Page
-// ============================================================
-
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Search, X, RefreshCw, Upload, Eye } from 'lucide-react';
-import { formatPrice, generateSlug } from '@/lib/utils';
-import type { Product } from '@/types';
+import { Edit, Eye, GripVertical, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { PRODUCT_COLORS, PRODUCT_SIZES } from '@/lib/constants';
+import { formatPrice, generateSlug } from '@/lib/utils';
 import { uploadProductImage } from '@/services/upload.service';
+import type { Product } from '@/types';
 
 type ProductFormMode = 'list' | 'create' | 'edit';
+type CategoryChoice = 'men' | 'women' | 'unisex' | 'custom';
 
-interface ProductDraft {
+type ProductDraft = {
   name: string;
   slug: string;
   description: string;
   price: number;
   compareAtPrice?: number;
-  category: 'men' | 'women' | 'unisex';
+  category: CategoryChoice;
+  customCategory: string;
+  productType: string;
   collection: string;
-  images: string;
-  colors: string;
+  imageUrls: string[];
+  colors: string[];
+  customColor: string;
   materials: string;
   sku: string;
   tags: string;
@@ -29,40 +30,50 @@ interface ProductDraft {
   isNewArrival: boolean;
   isBestSeller: boolean;
   isLimitedDrop: boolean;
-  status: 'draft' | 'active' | 'hidden' | 'archived' | 'sold_out';
-  sizes: string;
+  status: Product['status'];
+  sizes: Record<string, number>;
   fit: string;
   careInstructions: string;
-}
+};
+
+const productTypes = ['T-Shirts', 'Hoodies', 'Sweatshirts', 'Pants', 'Shorts', 'Jackets', 'Accessories', 'Custom'];
+const fitOptions = ['Regular fit', 'Oversized fit', 'Relaxed fit', 'Slim fit', 'Custom fit'];
 
 const emptyDraft: ProductDraft = {
   name: '',
   slug: '',
   description: '',
   price: 0,
-  category: 'men',
+  category: 'unisex',
+  customCategory: '',
+  productType: 'T-Shirts',
   collection: 'core',
-  images: '',
-  colors: 'black',
+  imageUrls: [],
+  colors: ['black'],
+  customColor: '',
   materials: 'Premium Cotton Blend',
   sku: '',
-  tags: 't-shirt, premium',
+  tags: 'premium, essentials',
   isFeatured: false,
   isNewArrival: true,
   isBestSeller: false,
   isLimitedDrop: false,
   status: 'active',
-  sizes: 'S:10, M:10, L:10, XL:10',
+  sizes: { S: 10, M: 10, L: 10, XL: 10 },
   fit: 'Regular fit',
   careInstructions: 'Wash inside out with similar colors. Do not bleach.',
 };
 
-const productFlagFields = [
-  { key: 'isFeatured', label: 'Featured' },
-  { key: 'isNewArrival', label: 'New Arrival' },
-  { key: 'isBestSeller', label: 'Best Seller' },
-  { key: 'isLimitedDrop', label: 'Limited Drop' },
-] as const satisfies ReadonlyArray<{ key: keyof Pick<ProductDraft, 'isFeatured' | 'isNewArrival' | 'isBestSeller' | 'isLimitedDrop'>; label: string }>;
+const flagFields = [
+  ['isFeatured', 'Featured', 'Show on the homepage featured products section.'],
+  ['isNewArrival', 'New Arrival', 'Mark as a new product.'],
+  ['isBestSeller', 'Best Seller', 'Use for products you want to highlight as best sellers.'],
+  ['isLimitedDrop', 'Limited Drop', 'Use only for pieces connected to a live limited release.'],
+] as const;
+
+function Field({ label, help, children }: { label: string; help: string; children: React.ReactNode }) {
+  return <div className="studio-field"><label>{label}</label>{children}<p className="studio-help">{help}</p></div>;
+}
 
 export default function AdminProducts() {
   const [mode, setMode] = useState<ProductFormMode>('list');
@@ -78,21 +89,23 @@ export default function AdminProducts() {
     try {
       const { getAdminProducts } = await import('@/lib/supabase/db');
       setProducts(await getAdminProducts());
-    } catch {
-      toast.error('Could not load products');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not load products');
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadCatalog();
-  }, []);
+  useEffect(() => { void loadCatalog(); }, []);
 
   const filteredProducts = useMemo(() => products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.sku.toLowerCase().includes(searchQuery.toLowerCase())
   ), [products, searchQuery]);
+
+  const updateDraft = <K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+  };
 
   const openCreate = () => {
     setEditingProduct(null);
@@ -101,6 +114,8 @@ export default function AdminProducts() {
   };
 
   const openEdit = (product: Product) => {
+    const stock: Record<string, number> = {};
+    product.sizes.forEach((size) => { stock[size.size] = size.stock; });
     setEditingProduct(product);
     setDraft({
       name: product.name,
@@ -109,9 +124,12 @@ export default function AdminProducts() {
       price: product.price,
       compareAtPrice: product.compareAtPrice,
       category: product.category,
-      collection: product.collection,
-      images: product.images.join('\n'),
-      colors: product.colors.join(', '),
+      customCategory: '',
+      productType: product.tags.find((tag) => productTypes.includes(tag)) || 'T-Shirts',
+      collection: product.collection || 'core',
+      imageUrls: product.images || [],
+      colors: product.colors || [],
+      customColor: '',
       materials: product.materials.join(', '),
       sku: product.sku,
       tags: product.tags.join(', '),
@@ -120,22 +138,22 @@ export default function AdminProducts() {
       isBestSeller: product.isBestSeller,
       isLimitedDrop: product.isLimitedDrop,
       status: product.status || 'active',
-      sizes: product.sizes.map((s) => `${s.size}:${s.stock}`).join(', '),
+      sizes: Object.keys(stock).length ? stock : emptyDraft.sizes,
       fit: product.fit || 'Regular fit',
-      careInstructions: product.careInstructions || 'Wash inside out with similar colors. Do not bleach.',
+      careInstructions: product.careInstructions || emptyDraft.careInstructions,
     });
     setMode('edit');
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this product?')) return;
+    if (!window.confirm('Archive this product? It will disappear from the storefront.')) return;
     try {
       const { deleteProduct } = await import('@/lib/supabase/db');
       await deleteProduct(id);
-      setProducts(products.filter((p) => p.id !== id));
-      toast.success('Product deleted');
-    } catch {
-      toast.error('Could not delete product');
+      setProducts((current) => current.filter((p) => p.id !== id));
+      toast.success('Product archived');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not archive product');
     }
   };
 
@@ -144,11 +162,8 @@ export default function AdminProducts() {
     setIsUploadingImage(true);
     try {
       const url = await uploadProductImage(file, draft.slug || generateSlug(draft.name || 'product'));
-      setDraft((current) => ({
-        ...current,
-        images: [current.images, url].filter(Boolean).join('\n'),
-      }));
-      toast.success('Image uploaded to Supabase Storage');
+      setDraft((current) => ({ ...current, imageUrls: [...current.imageUrls, url] }));
+      toast.success('Image uploaded');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not upload image');
     } finally {
@@ -156,41 +171,35 @@ export default function AdminProducts() {
     }
   };
 
-
   const saveProduct = async () => {
-    let imageList: string[];
-    try {
-      imageList = draft.images.split(/[\n,]/).map((v) => v.trim()).filter(Boolean);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Invalid product image link');
-      return;
-    }
-    if (!draft.name || !draft.price || !draft.sku || imageList.length === 0) {
+    const imageList = draft.imageUrls.map((v) => v.trim()).filter(Boolean);
+    if (!draft.name.trim() || !draft.price || !draft.sku.trim() || imageList.length === 0) {
       toast.error('Name, price, SKU, and at least one image are required');
       return;
     }
 
-    const sizes = draft.sizes.split(',').map((entry) => { const [size, stock] = entry.split(':').map((v) => v.trim()); return { size: size.toUpperCase(), stock: Number(stock || 0), lowStockThreshold: 3 }; }).filter((size) => size.size && Number.isFinite(size.stock) && size.stock >= 0);
-    if (sizes.length === 0) {
-      toast.error('Add at least one valid size as S:10, M:8');
-      return;
-    }
+    const sizeRows = Object.entries(draft.sizes)
+      .filter(([, stock]) => Number(stock) >= 0)
+      .map(([size, stock]) => ({ size, stock: Number(stock), lowStockThreshold: 3 }));
 
+    const category = draft.category === 'custom' ? 'unisex' : draft.category;
+    const customTags = draft.tags.split(',').map((v) => v.trim()).filter(Boolean);
     const payload = {
-      name: draft.name,
+      name: draft.name.trim(),
       slug: draft.slug || generateSlug(draft.name),
       description: draft.description || `${draft.name} by NEXORA.`,
       price: Number(draft.price),
       compareAtPrice: draft.compareAtPrice ? Number(draft.compareAtPrice) : undefined,
-      category: draft.category,
-      collection: draft.collection || 'core',
+      category,
+      gender: category,
+      collection: draft.category === 'custom' && draft.customCategory ? draft.customCategory : draft.collection || 'core',
       images: imageList,
       thumbnail: imageList[0],
-      sizes,
-      colors: draft.colors.split(',').map((v) => v.trim()).filter(Boolean),
+      sizes: sizeRows,
+      colors: [...new Set([...draft.colors, draft.customColor].map((v) => v.trim()).filter(Boolean))],
       materials: draft.materials.split(',').map((v) => v.trim()).filter(Boolean),
-      sku: draft.sku,
-      tags: draft.tags.split(',').map((v) => v.trim()).filter(Boolean),
+      sku: draft.sku.trim(),
+      tags: [...new Set([draft.productType, ...customTags].filter(Boolean))],
       isFeatured: draft.isFeatured,
       isNewArrival: draft.isNewArrival,
       isBestSeller: draft.isBestSeller,
@@ -202,7 +211,7 @@ export default function AdminProducts() {
       rating: editingProduct?.rating || 0,
       reviewCount: editingProduct?.reviewCount || 0,
       seoTitle: `${draft.name} | NEXORA`,
-      seoDescription: draft.description.slice(0, 155) || `${draft.name} by NEXORA`,
+      seoDescription: (draft.description || `${draft.name} by NEXORA`).slice(0, 155),
     };
 
     try {
@@ -215,67 +224,57 @@ export default function AdminProducts() {
         toast.success('Product created');
       }
       setMode('list');
-      loadCatalog();
-    } catch {
-      toast.error('Could not save product');
+      void loadCatalog();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save product');
     }
   };
 
-  const updateDraft = <K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) => {
-    setDraft((current) => ({ ...current, [key]: value }));
+  const moveImage = (from: number, to: number) => {
+    setDraft((current) => {
+      const next = [...current.imageUrls];
+      const [item] = next.splice(from, 1);
+      if (!item) return current;
+      next.splice(to, 0, item);
+      return { ...current, imageUrls: next };
+    });
   };
 
-  const firstImage = draft.images.split(/[\n,]/).map((v) => v.trim()).filter(Boolean)[0];
+  const removeImage = (url: string) => setDraft((current) => ({ ...current, imageUrls: current.imageUrls.filter((img) => img !== url) }));
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold tracking-wider uppercase text-[#f4f0e8]">Products</h1>
-          <p className="text-xs text-[#8a8175] mt-1">{products.length} products in catalog</p>
+          <h1 className="text-xl font-bold tracking-tight text-[#FFF0E1]">Products</h1>
+          <p className="mt-1 text-sm text-[#BCAEA0]">Create, edit, publish, and manage images for NEXORA products.</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={loadCatalog} className="nexora-button flex items-center gap-2"><RefreshCw className="w-3.5 h-3.5" />Refresh</button>
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-[#c8a96a] text-[#050505] text-xs font-bold tracking-wider uppercase hover:bg-[#d8bc7e] transition-colors"><Plus className="w-3.5 h-3.5" />Add Product</button>
+          <button onClick={loadCatalog} className="nexora-button"><RefreshCw className="h-4 w-4" />Refresh</button>
+          <button onClick={openCreate} className="nexora-button-primary"><Plus className="h-4 w-4" />Add Product</button>
         </div>
       </div>
 
       {mode === 'list' && (
         <>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8a8175]" />
-            <input type="text" placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#0b0b0d] border border-[#202024] pl-10 pr-4 py-2.5 text-sm text-[#f4f0e8] placeholder:text-[#2a2a2d] focus:outline-none focus:border-[#c8a96a]" />
-          </div>
-
-          <div className="bg-[#0b0b0d] border border-[#17171a] overflow-x-auto">
-            <table className="w-full text-left min-w-[820px]">
-              <thead>
-                <tr className="border-b border-[#17171a]">
-                  <th className="p-4 text-[10px] font-medium text-[#8a8175] uppercase tracking-wider">Image</th>
-                  <th className="p-4 text-[10px] font-medium text-[#8a8175] uppercase tracking-wider">Name</th>
-                  <th className="p-4 text-[10px] font-medium text-[#8a8175] uppercase tracking-wider">SKU</th>
-                  <th className="p-4 text-[10px] font-medium text-[#8a8175] uppercase tracking-wider">Price</th>
-                  <th className="p-4 text-[10px] font-medium text-[#8a8175] uppercase tracking-wider">Stock</th>
-                  <th className="p-4 text-[10px] font-medium text-[#8a8175] uppercase tracking-wider">Category</th>
-                  <th className="p-4 text-[10px] font-medium text-[#8a8175] uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search by product name or SKU" className="studio-input" />
+          <div className="studio-card overflow-x-auto">
+            <table className="w-full min-w-[820px] text-left">
+              <thead><tr className="border-b border-[#4A3D37]">
+                {['Image', 'Name', 'SKU', 'Price', 'Stock', 'Category', 'Actions'].map((h) => <th key={h} className="p-4 text-[10px] font-bold uppercase tracking-wider text-[#BCAEA0]">{h}</th>)}
+              </tr></thead>
               <tbody>
-                {isLoading ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-xs text-[#8a8175]">Loading products...</td></tr>
-                ) : filteredProducts.map((product) => {
-                  const totalStock = product.sizes.reduce((sum, s) => sum + s.stock, 0);
-                  return (
-                    <tr key={product.id} className="border-b border-[#17171a]/50 hover:bg-[#17171a]/30 transition-colors">
-                      <td className="p-4"><img src={product.images[0]} alt={product.name} className="w-10 h-10 object-cover bg-[#050505]" /></td>
-                      <td className="p-4"><Link to={`/product/${product.slug}`} className="text-xs text-[#f4f0e8] hover:text-[#c8a96a] transition-colors">{product.name}</Link></td>
-                      <td className="p-4 text-xs text-[#b8b0a3]">{product.sku}</td>
-                      <td className="p-4 text-xs text-[#c8a96a] font-medium">{formatPrice(product.price)}{product.compareAtPrice && <span className="text-[10px] text-[#8a8175] line-through ml-1">{formatPrice(product.compareAtPrice)}</span>}</td>
-                      <td className="p-4"><span className={`text-xs ${totalStock <= 10 ? 'text-red-400' : 'text-[#b8b0a3]'}`}>{totalStock} units</span></td>
-                      <td className="p-4"><span className="text-[10px] px-2 py-1 bg-[#17171a] text-[#b8b0a3] uppercase tracking-wider">{product.category}</span></td>
-                      <td className="p-4"><div className="flex items-center gap-2"><button onClick={() => openEdit(product)} className="p-1.5 text-[#8a8175] hover:text-[#c8a96a] transition-colors"><Edit className="w-3.5 h-3.5" /></button><button onClick={() => handleDelete(product.id)} className="p-1.5 text-[#8a8175] hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button></div></td>
-                    </tr>
-                  );
+                {isLoading ? <tr><td colSpan={7} className="p-8 text-center text-sm text-[#BCAEA0]">Loading products...</td></tr> : filteredProducts.map((product) => {
+                  const totalStock = product.sizes.reduce((sum, size) => sum + size.stock, 0);
+                  return <tr key={product.id} className="border-b border-[#332923] transition-colors hover:bg-[#2B211D]">
+                    <td className="p-4"><img src={product.images[0] || '/assets/nexora-logo-bg.jpg'} alt={product.name} className="h-12 w-12 rounded-xl object-cover" /></td>
+                    <td className="p-4"><Link to={`/product/${product.slug}`} className="text-sm font-semibold text-[#FFF0E1] hover:text-[#D2B48C]">{product.name}</Link><p className="text-[10px] uppercase tracking-wider text-[#BCAEA0]">{product.status}</p></td>
+                    <td className="p-4 text-xs text-[#BCAEA0]">{product.sku}</td>
+                    <td className="p-4 text-xs font-semibold text-[#D2B48C]">{formatPrice(product.price)}</td>
+                    <td className="p-4 text-xs text-[#BCAEA0]">{totalStock} units</td>
+                    <td className="p-4 text-xs text-[#BCAEA0]">{product.category}</td>
+                    <td className="p-4"><div className="flex gap-2"><button onClick={() => openEdit(product)} className="text-[#BCAEA0] hover:text-[#D2B48C]"><Edit className="h-4 w-4" /></button><button onClick={() => handleDelete(product.id)} className="text-[#BCAEA0] hover:text-red-300"><Trash2 className="h-4 w-4" /></button></div></td>
+                  </tr>;
                 })}
               </tbody>
             </table>
@@ -284,60 +283,74 @@ export default function AdminProducts() {
       )}
 
       {(mode === 'create' || mode === 'edit') && (
-        <div className="p-6 bg-[#0b0b0d] border border-[#17171a]">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-sm font-bold tracking-wider uppercase text-[#f4f0e8]">{mode === 'create' ? 'Add New Product' : 'Edit Product'}</h2>
-            <button onClick={() => setMode('list')} className="p-1.5 text-[#8a8175] hover:text-[#f4f0e8]"><X className="w-4 h-4" /></button>
+        <div className="studio-card p-5 sm:p-7">
+          <div className="mb-7 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[#FFF0E1]">{mode === 'create' ? 'Add New Product' : 'Edit Product'}</h2>
+              <p className="mt-1 text-sm text-[#BCAEA0]">Fields include helper notes so you can manage the store without studying the code.</p>
+            </div>
+            <button onClick={() => setMode('list')} className="text-[#BCAEA0] hover:text-[#FFF0E1]"><X className="h-5 w-5" /></button>
           </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <input value={draft.name} onChange={(e) => updateDraft('name', e.target.value)} placeholder="Product name" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input value={draft.slug} onChange={(e) => updateDraft('slug', e.target.value)} placeholder="Slug auto-generated if empty" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input type="number" value={draft.price} onChange={(e) => updateDraft('price', Number(e.target.value))} placeholder="Price" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input type="number" value={draft.compareAtPrice || ''} onChange={(e) => updateDraft('compareAtPrice', e.target.value ? Number(e.target.value) : undefined)} placeholder="Compare at price" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <select value={draft.category} onChange={(e) => updateDraft('category', e.target.value as 'men' | 'women' | 'unisex')} className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]"><option value="men">Men</option><option value="women">Women</option><option value="unisex">Unisex</option></select>
-            <input value={draft.collection} onChange={(e) => updateDraft('collection', e.target.value)} placeholder="Collection" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input value={draft.sku} onChange={(e) => updateDraft('sku', e.target.value)} placeholder="SKU" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <div className="sm:col-span-2 space-y-3">
-              <label className="text-[10px] text-[#8a8175] uppercase tracking-wider block">Supabase Storage image URLs</label>
-              <textarea value={draft.images} onChange={(e) => updateDraft('images', e.target.value)} placeholder="Upload images or paste Supabase public image URLs, one per line" rows={4} className="w-full bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Field label="Product name" help="The name customers will see. Example: NEXORA Signature Tee."><input value={draft.name} onChange={(e) => updateDraft('name', e.target.value)} className="studio-input" /></Field>
+            <Field label="Slug" help="Leave empty to auto-generate. Used in the product page URL."><input value={draft.slug} onChange={(e) => updateDraft('slug', e.target.value)} className="studio-input" placeholder="auto if empty" /></Field>
+            <Field label="Price EGP" help="Selling price in Egyptian pounds. Example: 499."><input type="number" value={draft.price} onChange={(e) => updateDraft('price', Number(e.target.value))} className="studio-input" /></Field>
+            <Field label="Compare-at price" help="Optional old price shown crossed out. Leave empty if not needed."><input type="number" value={draft.compareAtPrice || ''} onChange={(e) => updateDraft('compareAtPrice', e.target.value ? Number(e.target.value) : undefined)} className="studio-input" /></Field>
+            <Field label="Gender" help="Most products should be Men, Women, or Unisex. Use Custom only for special collections."><select value={draft.category} onChange={(e) => updateDraft('category', e.target.value as CategoryChoice)} className="studio-input"><option value="men">Men</option><option value="women">Women</option><option value="unisex">Unisex</option><option value="custom">Custom</option></select></Field>
+            <Field label="Product type" help="Choose a type to keep the catalog organized."><select value={draft.productType} onChange={(e) => updateDraft('productType', e.target.value)} className="studio-input">{productTypes.map((type) => <option key={type}>{type}</option>)}</select></Field>
+            {draft.category === 'custom' && <Field label="Custom category" help="Used internally if the product does not fit Men/Women/Unisex."><input value={draft.customCategory} onChange={(e) => updateDraft('customCategory', e.target.value)} className="studio-input" /></Field>}
+            <Field label="SKU" help="Internal stock code. Example: NXR-TEE-001."><input value={draft.sku} onChange={(e) => updateDraft('sku', e.target.value)} className="studio-input" /></Field>
+            <Field label="Collection" help="Internal collection name like core, summer, or limited."><input value={draft.collection} onChange={(e) => updateDraft('collection', e.target.value)} className="studio-input" /></Field>
+            <Field label="Fit" help="Choose the fit customers should expect."><select value={draft.fit} onChange={(e) => updateDraft('fit', e.target.value)} className="studio-input">{fitOptions.map((fit) => <option key={fit}>{fit}</option>)}</select></Field>
+            <Field label="Materials" help="Separate materials with commas. Example: Premium cotton, soft rib."><input value={draft.materials} onChange={(e) => updateDraft('materials', e.target.value)} className="studio-input" /></Field>
+          </div>
+
+          <div className="mt-7 grid gap-5 lg:grid-cols-2">
+            <Field label="Colors" help="Select visible color chips. Add a custom color name if needed.">
               <div className="flex flex-wrap gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-2 px-4 py-2 border border-[#202024] text-xs text-[#b8b0a3] hover:text-[#c8a96a] hover:border-[#c8a96a] transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  {isUploadingImage ? 'Uploading...' : 'Upload image'}
+                {PRODUCT_COLORS.map((color) => {
+                  const active = draft.colors.includes(color.value);
+                  return <button key={color.value} type="button" data-active={active} className="studio-chip" onClick={() => updateDraft('colors', active ? draft.colors.filter((c) => c !== color.value) : [...draft.colors, color.value])}><span className="h-3 w-3 rounded-full border border-white/20" style={{ background: color.hex }} />{color.label}</button>;
+                })}
+              </div>
+              <input value={draft.customColor} onChange={(e) => updateDraft('customColor', e.target.value)} className="studio-input mt-3" placeholder="Optional custom color name" />
+            </Field>
+
+            <Field label="Sizes and stock" help="Set stock for each size. Put 0 if unavailable.">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {PRODUCT_SIZES.map((size) => <label key={size} className="rounded-2xl border border-[#5B473C] bg-[#0E0B0A] p-2 text-center text-xs text-[#F4E8DA]"><span className="mb-1 block font-bold">{size}</span><input type="number" min={0} value={draft.sizes[size] ?? 0} onChange={(e) => updateDraft('sizes', { ...draft.sizes, [size]: Number(e.target.value) })} className="w-full rounded-xl border border-[#332923] bg-[#17110F] px-2 py-1 text-center text-xs" /></label>)}
+              </div>
+            </Field>
+          </div>
+
+          <div className="mt-7">
+            <Field label="Images gallery" help="Upload multiple images. The first image is the main product image. Use arrows to reorder.">
+              <div className="mb-4 flex flex-wrap gap-2">
+                <label className="nexora-button cursor-pointer">
+                  <Upload className="h-4 w-4" /> {isUploadingImage ? 'Uploading...' : 'Upload image'}
                   <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => handleImageUpload(e.target.files?.[0])} disabled={isUploadingImage} />
                 </label>
-                {firstImage && (
-                  <a href={firstImage} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 border border-[#202024] text-xs text-[#b8b0a3] hover:text-[#c8a96a] hover:border-[#c8a96a] transition-colors">
-                    <Eye className="w-3.5 h-3.5" /> Preview first image
-                  </a>
-                )}
+                <input className="studio-input max-w-xl" placeholder="Paste image URL then press Enter" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const value = e.currentTarget.value.trim(); if (value) { updateDraft('imageUrls', [...draft.imageUrls, value]); e.currentTarget.value = ''; } } }} />
               </div>
-              <p className="text-[10px] text-[#8a8175] leading-relaxed">Images upload to the public Supabase Storage bucket named products. First image becomes the main storefront image.</p>
-            </div>
-            <input value={draft.colors} onChange={(e) => updateDraft('colors', e.target.value)} placeholder="Colors comma separated" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input value={draft.materials} onChange={(e) => updateDraft('materials', e.target.value)} placeholder="Materials comma separated" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input value={draft.tags} onChange={(e) => updateDraft('tags', e.target.value)} placeholder="Tags comma separated" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8] sm:col-span-2" />
-            <select value={draft.status} onChange={(e) => updateDraft('status', e.target.value as ProductDraft['status'])} className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]">
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="hidden">Hidden</option>
-              <option value="archived">Archived</option>
-              <option value="sold_out">Sold Out</option>
-            </select>
-            <input value={draft.sizes} onChange={(e) => updateDraft('sizes', e.target.value)} placeholder="Sizes e.g. S:10, M:8, L:4" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input value={draft.fit} onChange={(e) => updateDraft('fit', e.target.value)} placeholder="Fit e.g. Oversized fit" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <input value={draft.careInstructions} onChange={(e) => updateDraft('careInstructions', e.target.value)} placeholder="Care instructions" className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8]" />
-            <textarea value={draft.description} onChange={(e) => updateDraft('description', e.target.value)} placeholder="Description" rows={4} className="bg-[#050505] border border-[#202024] px-4 py-3 text-sm text-[#f4f0e8] sm:col-span-2" />
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                {draft.imageUrls.map((url, index) => <div key={`${url}-${index}`} className="relative rounded-2xl border border-[#5B473C] bg-[#0E0B0A] p-2"><img src={url} alt={`Product ${index + 1}`} className="h-32 w-full rounded-xl object-cover" /><div className="mt-2 flex items-center justify-between gap-2"><span className="text-[10px] text-[#BCAEA0]">{index === 0 ? 'Main' : `Image ${index + 1}`}</span><div className="flex gap-1"><button onClick={() => index > 0 && moveImage(index, index - 1)} className="text-[#BCAEA0]"><GripVertical className="h-3 w-3" /></button><a href={url} target="_blank" rel="noreferrer" className="text-[#BCAEA0]"><Eye className="h-3 w-3" /></a><button onClick={() => removeImage(url)} className="text-red-300"><X className="h-3 w-3" /></button></div></div></div>)}
+              </div>
+            </Field>
           </div>
-          <div className="grid sm:grid-cols-4 gap-3 my-6">
-            {productFlagFields.map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 text-xs text-[#b8b0a3]">
-                <input type="checkbox" checked={draft[key]} onChange={(e) => updateDraft(key, e.target.checked)} />
-                {label}
-              </label>
-            ))}
+
+          <div className="mt-7 grid gap-5 lg:grid-cols-2">
+            <Field label="Tags" help="Optional tags separated by commas for filtering and search."><input value={draft.tags} onChange={(e) => updateDraft('tags', e.target.value)} className="studio-input" /></Field>
+            <Field label="Status" help="Active appears in the store. Draft/Hidden stay private. Sold Out appears unavailable."><select value={draft.status} onChange={(e) => updateDraft('status', e.target.value as ProductDraft['status'])} className="studio-input"><option value="draft">Draft</option><option value="active">Active</option><option value="hidden">Hidden</option><option value="archived">Archived</option><option value="sold_out">Sold Out</option></select></Field>
+            <Field label="Care instructions" help="Short washing/care note for the customer."><input value={draft.careInstructions} onChange={(e) => updateDraft('careInstructions', e.target.value)} className="studio-input" /></Field>
+            <Field label="Description" help="Clear customer-facing description. Avoid internal notes."><textarea value={draft.description} onChange={(e) => updateDraft('description', e.target.value)} rows={5} className="studio-input" /></Field>
           </div>
-          <div className="flex gap-4">
+
+          <div className="my-7 grid gap-3 md:grid-cols-4">
+            {flagFields.map(([key, label, help]) => <button key={key} type="button" data-active={draft[key]} className="studio-chip justify-center rounded-2xl px-4 py-3 text-left" onClick={() => updateDraft(key, !draft[key])}><span>{label}</span><span className="sr-only">{help}</span></button>)}
+          </div>
+
+          <div className="flex flex-wrap gap-3">
             <button onClick={() => setMode('list')} className="nexora-button">Cancel</button>
             <button onClick={saveProduct} className="nexora-button-primary">{mode === 'create' ? 'Create Product' : 'Save Changes'}</button>
           </div>

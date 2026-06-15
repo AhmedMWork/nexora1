@@ -27,6 +27,7 @@ import { formatPrice, calculateDiscount } from '@/lib/utils';
 import ProductCard from '@/components/ui/ProductCard';
 import SectionReveal from '@/components/ui/SectionReveal';
 import toast from 'react-hot-toast';
+import { trackEvent } from '@/services/analytics.service';
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -36,6 +37,7 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState<'description' | 'shipping' | 'reviews'>('description');
 
   const { isInWishlist, toggleItem } = useWishlistStore();
@@ -58,6 +60,7 @@ export default function ProductDetailPage() {
           const { getReviews } = await import('@/lib/supabase/db');
           const loadedReviews = await getReviews({ productId: loadedProduct.id, isApproved: true });
           if (mounted) setReviews(loadedReviews);
+          void trackEvent('product_view', { productId: loadedProduct.id, productName: loadedProduct.name, slug: loadedProduct.slug });
         } else {
           setRelatedProducts([]);
           setReviews([]);
@@ -76,6 +79,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     setSelectedSize('');
     setQuantity(1);
+    setActiveImage(0);
     window.scrollTo(0, 0);
   }, [slug]);
 
@@ -124,7 +128,7 @@ export default function ProductDetailPage() {
       price: product.price,
       size: selectedSize,
       quantity,
-      image: product.images[0],
+      image: product.images[activeImage] || product.images[0],
     });
     toast.success(`${product.name} added to cart`);
   };
@@ -176,7 +180,7 @@ export default function ProductDetailPage() {
                 className="relative aspect-[3/4] bg-[#0b0b0d] overflow-hidden"
               >
                 <img
-                  src={product.images[0]}
+                  src={product.images[activeImage] || product.images[0] || '/assets/nexora-logo-bg.jpg'}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -186,6 +190,15 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </motion.div>
+              {product.images.length > 1 && (
+                <div className="mt-4 grid grid-cols-4 gap-3">
+                  {product.images.map((image, index) => (
+                    <button key={`${image}-${index}`} onClick={() => setActiveImage(index)} className={`aspect-square overflow-hidden border ${activeImage === index ? 'border-[#c8a96a]' : 'border-[#17171a]'} bg-[#0b0b0d]`}>
+                      <img src={image} alt={`${product.name} ${index + 1}`} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Product Info */}
@@ -239,9 +252,7 @@ export default function ProductDetailPage() {
                     <span className="text-xs font-medium tracking-wider uppercase text-[#b8b0a3]">
                       Size
                     </span>
-                    <button className="text-[10px] text-[#8a8175] hover:text-[#c8a96a] transition-colors">
-                      Size Guide
-                    </button>
+                    <span className="text-[10px] text-[#8a8175]">Choose available size</span>
                   </div>
                   <div className="flex gap-2">
                     {product.sizes.map((size) => {

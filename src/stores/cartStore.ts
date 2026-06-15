@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem } from '@/types';
+import { trackEvent } from '@/services/analytics.service';
 
 interface CartStore {
   items: CartItem[];
@@ -27,6 +28,7 @@ export const useCartStore = create<CartStore>()(
           (i) => i.productId === item.productId && i.size === item.size
         );
 
+        void trackEvent('add_to_cart', { productId: item.productId, productName: item.name, size: item.size, quantity: item.quantity });
         if (existingItem) {
           set({
             items: items.map((i) =>
@@ -41,6 +43,8 @@ export const useCartStore = create<CartStore>()(
       },
 
       removeItem: (productId, size) => {
+        const removed = get().items.find((i) => i.productId === productId && i.size === size);
+        if (removed) void trackEvent('remove_from_cart', { productId, productName: removed.name, size, quantity: removed.quantity });
         set({
           items: get().items.filter(
             (i) => !(i.productId === productId && i.size === size)

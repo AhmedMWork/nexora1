@@ -14,6 +14,8 @@ import SplashScreen from '@/components/ui/SplashScreen';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { I18nProvider } from '@/i18n/I18nProvider';
+import ErrorBoundary from '@/components/system/ErrorBoundary';
+import { trackEvent } from '@/services/analytics.service';
 
 // ─── Lazy-loaded Pages ───
 const HomePage = lazy(() => import('@/pages/HomePage'));
@@ -35,16 +37,18 @@ const AdminOrders = lazy(() => import('@/pages/admin/AdminOrders'));
 const AdminInventory = lazy(() => import('@/pages/admin/AdminInventory'));
 const AdminReviews = lazy(() => import('@/pages/admin/AdminReviews'));
 const AdminCoupons = lazy(() => import('@/pages/admin/AdminCoupons'));
-const AdminPromotions = lazy(() => import('@/pages/admin/AdminPromotions'));
 const AdminDrops = lazy(() => import('@/pages/admin/AdminDrops'));
-const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'));
-const AdminAuditLogs = lazy(() => import('@/pages/admin/AdminAuditLogs'));
+const AdminAnalytics = lazy(() => import('@/pages/admin/AdminAnalytics'));
+const AdminCustomers = lazy(() => import('@/pages/admin/AdminCustomers'));
+const AdminSEO = lazy(() => import('@/pages/admin/AdminSEO'));
+const AdminSystemHealth = lazy(() => import('@/pages/admin/AdminSystemHealth'));
 
 // ─── Scroll to top on route change ───
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
+    void trackEvent('page_view', { pathname });
   }, [pathname]);
   return null;
 }
@@ -96,10 +100,14 @@ function AdminRoutes() {
           <Route path="/inventory" element={<PageTransition><AdminInventory /></PageTransition>} />
           <Route path="/reviews" element={<PageTransition><AdminReviews /></PageTransition>} />
           <Route path="/coupons" element={<PageTransition><AdminCoupons /></PageTransition>} />
-          <Route path="/promotions" element={<PageTransition><AdminPromotions /></PageTransition>} />
           <Route path="/drops" element={<PageTransition><AdminDrops /></PageTransition>} />
-          <Route path="/settings" element={<PageTransition><AdminSettings /></PageTransition>} />
-          <Route path="/audit-logs" element={<PageTransition><AdminAuditLogs /></PageTransition>} />
+          <Route path="/analytics" element={<PageTransition><AdminAnalytics /></PageTransition>} />
+          <Route path="/customers" element={<PageTransition><AdminCustomers /></PageTransition>} />
+          <Route path="/seo" element={<PageTransition><AdminSEO /></PageTransition>} />
+          <Route path="/system-health" element={<PageTransition><AdminSystemHealth /></PageTransition>} />
+          <Route path="/settings" element={<Navigate to="/nexora-admin/analytics" replace />} />
+          <Route path="/audit-logs" element={<Navigate to="/nexora-admin/analytics" replace />} />
+          <Route path="/promotions" element={<Navigate to="/nexora-admin/coupons" replace />} />
         </Routes>
       </AnimatePresence>
     </AdminLayout>
@@ -120,6 +128,7 @@ export default function App() {
       <I18nProvider>
         <HelmetProvider>
       <BrowserRouter>
+        <ErrorBoundary>
         <ScrollToTop />
         <SplashGate />
         <Toaster
@@ -155,6 +164,7 @@ export default function App() {
             <Route path="*" element={<PublicRoutes />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </BrowserRouter>
         </HelmetProvider>
       </I18nProvider>

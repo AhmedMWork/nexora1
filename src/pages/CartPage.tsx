@@ -2,6 +2,7 @@
 // NEXORA — Cart Page
 // ============================================================
 
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -11,6 +12,7 @@ import { formatPrice } from '@/lib/utils';
 import EmptyState from '@/components/ui/EmptyState';
 import SectionReveal from '@/components/ui/SectionReveal';
 import { SHIPPING_FEE, FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
+import { trackEvent } from '@/services/analytics.service';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
@@ -18,6 +20,10 @@ export default function CartPage() {
   const subtotal = getTotalPrice();
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const total = subtotal + shipping;
+
+  useEffect(() => {
+    void trackEvent('cart_view', { itemsCount: items.length, subtotal });
+  }, [items.length, subtotal]);
 
   if (items.length === 0) {
     return (

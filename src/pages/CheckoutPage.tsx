@@ -17,6 +17,7 @@ import SectionReveal from '@/components/ui/SectionReveal';
 import EmptyState from '@/components/ui/EmptyState';
 import { useI18n } from '@/i18n/I18nProvider';
 import toast from 'react-hot-toast';
+import { trackEvent } from '@/services/analytics.service';
 
 const DEFAULT_WHATSAPP = import.meta.env.VITE_DEFAULT_WHATSAPP_NUMBER || '';
 
@@ -53,6 +54,7 @@ export default function CheckoutPage() {
   const cities = selectedGovernorate ? getCitiesForGovernorate(selectedGovernorate) : [];
 
   useEffect(() => {
+    void trackEvent('checkout_start', { itemsCount: items.length, subtotal });
     let mounted = true;
     import('@/lib/supabase/db')
       .then(({ getSiteSettings }) => getSiteSettings())
@@ -65,7 +67,7 @@ export default function CheckoutPage() {
       })
       .catch(() => undefined);
     return () => { mounted = false; };
-  }, []);
+  }, [items.length, subtotal]);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -79,10 +81,12 @@ export default function CheckoutPage() {
       });
       if (!result.valid) {
         setAppliedCoupon(null);
+        void trackEvent('coupon_fail', { code: couponCode, message: result.message });
         toast.error(result.message);
         return;
       }
       setAppliedCoupon({ code: result.code || couponCode.toUpperCase(), discount: result.discount, freeShipping: result.freeShipping });
+      void trackEvent('coupon_apply', { code: result.code || couponCode.toUpperCase(), discount: result.discount });
       toast.success(result.message);
     } catch {
       toast.error('Could not validate this code');
@@ -98,6 +102,7 @@ export default function CheckoutPage() {
     }
 
     try {
+      void trackEvent('order_submit', { itemsCount: items.length, subtotal, total });
       const { createOrderWithStockTransaction } = await import('@/lib/supabase/db');
       const newOrderNumber = generateOrderNumber();
 
@@ -138,11 +143,13 @@ export default function CheckoutPage() {
         ],
       });
 
+      void trackEvent('order_success', { orderNumber: createdOrder.orderNumber || newOrderNumber, total: createdOrder.total || total });
       setOrderNumber(createdOrder.orderNumber || newOrderNumber);
       setOrderComplete(true);
       clearCart();
       toast.success(t('checkout.confirmed'));
     } catch (error) {
+      void trackEvent('order_failed', { message: error instanceof Error ? error.message : 'unknown' });
       const message = error instanceof Error ? error.message : t('checkout.failed');
       toast.error(message || t('checkout.failed'));
     }
