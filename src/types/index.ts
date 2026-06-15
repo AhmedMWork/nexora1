@@ -5,6 +5,16 @@
 export type ProductStatus = 'draft' | 'active' | 'hidden' | 'archived' | 'sold_out';
 export type ProductVisibility = 'public' | 'private' | 'scheduled';
 
+export interface ProductColor {
+  id: string;
+  name: string;
+  nameEn?: string;
+  nameAr?: string;
+  hex?: string;
+  pattern?: string;
+  available?: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -21,7 +31,7 @@ export interface Product {
   images: string[];
   thumbnail?: string;
   sizes: SizeInventory[];
-  colors: string[];
+  colors: Array<string | ProductColor>;
   materials: string[];
   fit?: string;
   careInstructions?: string;
@@ -56,6 +66,9 @@ export interface CartItem {
   name: string;
   price: number;
   size: string;
+  color?: string;
+  colorHex?: string;
+  colorPattern?: string;
   quantity: number;
   image: string;
 }
@@ -97,6 +110,8 @@ export interface OrderItem {
   slug: string;
   price: number;
   size: string;
+  color?: string;
+  colorHex?: string;
   quantity: number;
   image: string;
 }
@@ -284,7 +299,7 @@ export interface FilterState {
   search: string;
   category: string;
   sizes: string[];
-  colors: string[];
+  colors: Array<string | ProductColor>;
   minPrice: number;
   maxPrice: number;
   sortBy: 'newest' | 'price-low' | 'price-high' | 'best-selling' | 'rating';

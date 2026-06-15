@@ -24,6 +24,7 @@ import { useRecentlyViewedStore } from '@/stores/recentlyViewedStore';
 import { loadProductBySlug, loadProducts } from '@/services/productService';
 import type { Product, Review } from '@/types';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
+import { normalizeColors, getColorDisplayName, getColorStyle } from '@/lib/productOptions';
 import ProductCard from '@/components/ui/ProductCard';
 import SectionReveal from '@/components/ui/SectionReveal';
 import toast from 'react-hot-toast';
@@ -36,6 +37,7 @@ export default function ProductDetailPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColorId, setSelectedColorId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState<'description' | 'shipping' | 'reviews'>('description');
@@ -78,6 +80,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     setSelectedSize('');
+    setSelectedColorId('');
     setQuantity(1);
     setActiveImage(0);
     window.scrollTo(0, 0);
@@ -111,7 +114,19 @@ export default function ProductDetailPage() {
 
   const discount = calculateDiscount(product.price, product.compareAtPrice);
   const inWishlist = isInWishlist(product.id);
+  const productImages = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
+  const productColors = normalizeColors(product.colors);
+  const selectedColor = productColors.find((color) => color.id === selectedColorId) || null;
+  const visibleReviews = reviews.filter((review) => review.isApproved !== false);
+  const averageRating = visibleReviews.length
+    ? Math.round((visibleReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / visibleReviews.length) * 10) / 10
+    : Number(product.rating || 0);
+  const reviewCount = visibleReviews.length || Number(product.reviewCount || 0);
   const handleAddToCart = () => {
+    if (productColors.length > 0 && !selectedColor) {
+      toast.error('Please select a color');
+      return;
+    }
     if (!selectedSize) {
       toast.error('Please select a size');
       return;
@@ -127,9 +142,13 @@ export default function ProductDetailPage() {
       name: product.name,
       price: product.price,
       size: selectedSize,
+      color: selectedColor ? getColorDisplayName(selectedColor) : undefined,
+      colorHex: selectedColor?.hex,
+      colorPattern: selectedColor?.pattern,
       quantity,
-      image: product.images[activeImage] || product.images[0],
+      image: productImages[activeImage] || productImages[0] || '/assets/nexora-logo-bg.jpg',
     });
+    void trackEvent('color_select', { productId: product.id, color: selectedColor?.name });
     toast.success(`${product.name} added to cart`);
   };
 
@@ -148,7 +167,7 @@ export default function ProductDetailPage() {
         <meta property="og:title" content={product.name} />
         <meta property="og:description" content={product.description.slice(0, 160)} />
         <meta property="og:type" content="product" />
-        <meta property="og:image" content={product.images[0]} />
+        <meta property="og:image" content={productImages[0] || '/assets/nexora-logo-bg.jpg'} />
         <meta property="product:price:amount" content={String(product.price)} />
         <meta property="product:price:currency" content="EGP" />
         <link rel="canonical" href={`/product/${product.slug}`} />
@@ -174,13 +193,23 @@ export default function ProductDetailPage() {
           <div className="grid lg:grid-cols-7 gap-8 lg:gap-12">
             {/* Image Gallery */}
             <div className="lg:col-span-4">
+              <div className="grid gap-4 lg:grid-cols-[86px_minmax(0,1fr)]">
+              {productImages.length > 1 && (
+                <div className="order-2 grid grid-cols-4 gap-3 lg:order-1 lg:grid-cols-1 lg:self-start">
+                  {productImages.map((image, index) => (
+                    <button key={`${image}-${index}`} onClick={() => setActiveImage(index)} className={`aspect-square overflow-hidden rounded-2xl border ${activeImage === index ? 'border-[#c8a96a]' : 'border-[#17171a]'} bg-[#0b0b0d]`}>
+                      <img src={image} alt={`${product.name} ${index + 1}`} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="relative aspect-[3/4] bg-[#0b0b0d] overflow-hidden"
+                className="relative order-1 aspect-[3/4] overflow-hidden rounded-[28px] bg-[#0b0b0d] lg:order-2"
               >
                 <img
-                  src={product.images[activeImage] || product.images[0] || '/assets/nexora-logo-bg.jpg'}
+                  src={productImages[activeImage] || productImages[0] || '/assets/nexora-logo-bg.jpg'}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -190,15 +219,7 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </motion.div>
-              {product.images.length > 1 && (
-                <div className="mt-4 grid grid-cols-4 gap-3">
-                  {product.images.map((image, index) => (
-                    <button key={`${image}-${index}`} onClick={() => setActiveImage(index)} className={`aspect-square overflow-hidden border ${activeImage === index ? 'border-[#c8a96a]' : 'border-[#17171a]'} bg-[#0b0b0d]`}>
-                      <img src={image} alt={`${product.name} ${index + 1}`} className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Product Info */}
@@ -222,7 +243,7 @@ export default function ProductDetailPage() {
                       <Star
                         key={i}
                         className={`w-3.5 h-3.5 ${
-                          i < Math.floor(product.rating)
+                          i < Math.floor(averageRating)
                             ? 'text-[#c8a96a] fill-[#c8a96a]'
                             : 'text-[#2a2a2d]'
                         }`}
@@ -230,7 +251,7 @@ export default function ProductDetailPage() {
                     ))}
                   </div>
                   <span className="text-xs text-[#b8b0a3]">
-                    {product.rating} ({product.reviewCount} reviews)
+                    {averageRating} ({reviewCount} reviews)
                   </span>
                 </div>
 
@@ -245,6 +266,42 @@ export default function ProductDetailPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Color Selection */}
+                {productColors.length > 0 && (
+                  <div className="mb-6">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-xs font-medium tracking-wider uppercase text-[#b8b0a3]">Color</span>
+                      <span className="text-[10px] text-[#8a8175]">Choose color before adding to cart</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {productColors.map((color) => {
+                        const isSelected = selectedColorId === color.id;
+                        const isAvailable = color.available !== false;
+                        return (
+                          <button
+                            key={color.id}
+                            type="button"
+                            disabled={!isAvailable}
+                            onClick={() => {
+                              if (!isAvailable) return;
+                              setSelectedColorId(color.id);
+                              void trackEvent('color_select', { productId: product.id, productName: product.name, color: color.name });
+                            }}
+                            className={`flex items-center gap-2 rounded-full border px-3 py-2 text-xs transition-all ${
+                              isSelected
+                                ? 'border-[#c8a96a] bg-[#c8a96a]/10 text-[#f4f0e8]'
+                                : 'border-[#202024] text-[#b8b0a3] hover:border-[#6f675d] hover:text-[#f4f0e8]'
+                            } ${!isAvailable ? 'cursor-not-allowed opacity-40' : ''}`}
+                          >
+                            <span className="h-5 w-5 rounded-full border border-white/25 shadow-inner" style={getColorStyle(color)} />
+                            {getColorDisplayName(color)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Size Selection */}
                 <div className="mb-6">
@@ -263,7 +320,7 @@ export default function ProductDetailPage() {
                       return (
                         <button
                           key={size.size}
-                          onClick={() => isAvailable && setSelectedSize(size.size)}
+                          onClick={() => { if (isAvailable) { setSelectedSize(size.size); void trackEvent('size_select', { productId: product.id, productName: product.name, size: size.size }); } }}
                           disabled={!isAvailable}
                           className={`relative w-11 h-11 flex items-center justify-center text-xs font-medium border transition-all ${
                             isSelected
@@ -356,7 +413,7 @@ export default function ProductDetailPage() {
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2">
-                  {product.tags.map((tag) => (
+                  {(product.tags || []).map((tag) => (
                     <Link
                       key={tag}
                       to={`/shop?tag=${tag}`}
@@ -397,7 +454,7 @@ export default function ProductDetailPage() {
                   <div>
                     <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#b8b0a3] mb-2">Materials</h4>
                     <ul className="space-y-1">
-                      {product.materials.map((m) => (
+                      {(product.materials || []).map((m) => (
                         <li key={m} className="text-xs text-[#8a8175]">{m}</li>
                       ))}
                     </ul>
@@ -405,8 +462,8 @@ export default function ProductDetailPage() {
                   <div>
                     <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#b8b0a3] mb-2">Colors</h4>
                     <div className="flex flex-wrap gap-2">
-                      {product.colors.map((c) => (
-                        <span key={c} className="text-xs text-[#8a8175] capitalize">{c}</span>
+                      {productColors.map((c) => (
+                        <span key={c.id} className="inline-flex items-center gap-2 rounded-full border border-[#202024] px-3 py-1 text-xs text-[#8a8175]"><span className="h-3 w-3 rounded-full border border-white/20" style={getColorStyle(c)} />{getColorDisplayName(c)}</span>
                       ))}
                     </div>
                   </div>
@@ -420,19 +477,19 @@ export default function ProductDetailPage() {
                   <div className="p-4 bg-[#0b0b0d] border border-[#17171a]">
                     <h4 className="text-xs font-bold tracking-wider uppercase text-[#f4f0e8] mb-2">Delivery</h4>
                     <p className="text-xs text-[#b8b0a3] leading-relaxed">
-                      We deliver across all Egyptian governorates. Orders typically arrive within 2-5 business days depending on your location. Cairo and Giza orders are usually delivered within 48 hours.
+                      We deliver across all Egyptian governorates. Orders typically arrive within 3–7 business days depending on your governorate.
                     </p>
                   </div>
                   <div className="p-4 bg-[#0b0b0d] border border-[#17171a]">
                     <h4 className="text-xs font-bold tracking-wider uppercase text-[#f4f0e8] mb-2">Free Shipping</h4>
                     <p className="text-xs text-[#b8b0a3] leading-relaxed">
-                      Enjoy free shipping on all orders over 1,500 EGP. Standard shipping fee is 60 EGP for orders below that threshold.
+                      Shipping is calculated clearly at checkout. Free shipping may apply only when enabled by store rules.
                     </p>
                   </div>
                   <div className="p-4 bg-[#0b0b0d] border border-[#17171a]">
                     <h4 className="text-xs font-bold tracking-wider uppercase text-[#f4f0e8] mb-2">Returns</h4>
                     <p className="text-xs text-[#b8b0a3] leading-relaxed">
-                      Not satisfied? Return unused items with original tags within 14 days of delivery for a full refund or exchange. Return shipping is on us.
+                      Not satisfied? Return unused items with original tags within 14 days of delivery for a full refund or exchange. Return shipping is covered by the customer unless the issue was caused by NEXORA.
                     </p>
                   </div>
                 </div>
@@ -441,9 +498,9 @@ export default function ProductDetailPage() {
 
             {activeTab === 'reviews' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                {reviews.length > 0 ? (
+                {visibleReviews.length > 0 ? (
                   <div className="space-y-4 max-w-2xl">
-                    {reviews.map((review, i) => (
+                    {visibleReviews.map((review, i) => (
                       <div key={i} className="p-5 bg-[#0b0b0d] border border-[#17171a]">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="flex">
@@ -458,13 +515,20 @@ export default function ProductDetailPage() {
                         </div>
                         <h4 className="text-sm font-semibold text-[#f4f0e8] mb-1">{review.title}</h4>
                         <p className="text-xs text-[#b8b0a3] leading-relaxed">{review.body}</p>
+                        {review.images && review.images.length > 0 && (
+                          <div className="mt-4 grid grid-cols-2 gap-3">
+                            {review.images.map((image) => (
+                              <img key={image} src={image} alt={`${review.customerName} review`} className="h-28 w-full rounded-2xl object-cover" />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-10">
                     <MessageSquare className="w-8 h-8 text-[#2a2a2d] mx-auto mb-3" />
-                    <p className="text-sm text-[#8a8175]">No reviews yet. Be the first to review!</p>
+                    <p className="text-sm text-[#8a8175]">No product reviews have been published yet.</p>
                   </div>
                 )}
               </motion.div>

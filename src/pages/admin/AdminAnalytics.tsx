@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, RefreshCw, ShoppingCart, Users, MousePointerClick, PackageMinus } from 'lucide-react';
+import { BarChart3, RefreshCw, ShoppingCart, Users, MousePointerClick, PackageMinus, Palette, Ruler, TicketPercent } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 
 type AnalyticsEvent = {
@@ -22,6 +22,10 @@ type AnalyticsData = {
 
 function Card({ title, value, helper, icon: Icon }: { title: string; value: string; helper: string; icon: React.ElementType }) {
   return <div className="studio-card p-5"><div className="mb-3 flex items-center justify-between"><Icon className="h-5 w-5 text-[#D2B48C]" /><span className="text-[10px] uppercase tracking-[0.18em] text-[#BCAEA0]">{title}</span></div><p className="text-2xl font-bold text-[#FFF0E1]">{value}</p><p className="mt-2 text-xs leading-6 text-[#BCAEA0]">{helper}</p></div>;
+}
+
+function InsightList({ title, items, empty, icon: Icon }: { title: string; items: [string, number][]; empty: string; icon: React.ElementType }) {
+  return <div className="studio-card p-5"><h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#FFF0E1]"><Icon className="h-4 w-4 text-[#D2B48C]" />{title}</h2><div className="space-y-2">{items.length ? items.map(([name, count]) => <div key={name} className="flex justify-between rounded-2xl border border-[#2E3442] bg-[#12151B] px-4 py-3 text-sm"><span className="text-[#D2C0B0]">{name}</span><span className="font-semibold text-[#D2B48C]">{count}</span></div>) : <p className="text-sm text-[#BCAEA0]">{empty}</p>}</div></div>;
 }
 
 export default function AdminAnalytics() {
@@ -53,11 +57,24 @@ export default function AdminAnalytics() {
     const abandonedCheckout = Math.max(0, checkoutStart - orderSuccess);
     const revenue = data.orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
     const productMap = new Map<string, number>();
+    const colorMap = new Map<string, number>();
+    const sizeMap = new Map<string, number>();
+    const couponMap = new Map<string, number>();
     data.events.filter((e) => ['product_view','add_to_cart','remove_from_cart'].includes(e.event_name)).forEach((event) => {
       const name = String(event.payload?.productName || event.payload?.name || event.payload?.productId || 'Unknown product');
       productMap.set(name, (productMap.get(name) || 0) + 1);
+      const color = String(event.payload?.color || '').trim();
+      const size = String(event.payload?.size || '').trim();
+      if (color) colorMap.set(color, (colorMap.get(color) || 0) + 1);
+      if (size) sizeMap.set(size, (sizeMap.get(size) || 0) + 1);
     });
-    return { sessions: sessions.size, productViews, addToCart, removeFromCart, cartViews, checkoutStart, orderSuccess, abandonedCart, abandonedCheckout, revenue, topProducts: [...productMap.entries()].sort((a,b) => b[1]-a[1]).slice(0, 8) };
+    data.events.filter((e) => ['coupon_apply','coupon_fail','coupon_failed'].includes(e.event_name)).forEach((event) => {
+      const code = String(event.payload?.code || 'Unknown').trim().toUpperCase();
+      couponMap.set(code, (couponMap.get(code) || 0) + 1);
+    });
+    const byDevice = data.events.reduce((acc, event) => { const key = event.device || 'unknown'; acc[key] = (acc[key] || 0) + 1; return acc; }, {} as Record<string, number>);
+    const byLanguage = data.events.reduce((acc, event) => { const key = event.language || 'unknown'; acc[key] = (acc[key] || 0) + 1; return acc; }, {} as Record<string, number>);
+    return { sessions: sessions.size, productViews, addToCart, removeFromCart, cartViews, checkoutStart, orderSuccess, abandonedCart, abandonedCheckout, revenue, topProducts: [...productMap.entries()].sort((a,b) => b[1]-a[1]).slice(0, 8), topColors: [...colorMap.entries()].sort((a,b) => b[1]-a[1]).slice(0, 8), topSizes: [...sizeMap.entries()].sort((a,b) => b[1]-a[1]).slice(0, 8), topCoupons: [...couponMap.entries()].sort((a,b) => b[1]-a[1]).slice(0, 8), byDevice, byLanguage };
   }, [data]);
 
   return (
@@ -77,6 +94,12 @@ export default function AdminAnalytics() {
         <Card title="Cart Adds" value={String(stats.addToCart)} helper={`${stats.removeFromCart} remove-from-cart events captured.`} icon={ShoppingCart} />
         <Card title="Cart Abandon" value={String(stats.abandonedCart)} helper="Cart views without matching successful orders." icon={PackageMinus} />
         <Card title="Revenue" value={formatPrice(stats.revenue)} helper={`${stats.orderSuccess} successful order signals.`} icon={BarChart3} />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <InsightList title="Selected Colors" icon={Palette} items={stats.topColors} empty="No color selections yet." />
+        <InsightList title="Selected Sizes" icon={Ruler} items={stats.topSizes} empty="No size selections yet." />
+        <InsightList title="Coupon Attempts" icon={TicketPercent} items={stats.topCoupons} empty="No coupon activity yet." />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

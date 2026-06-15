@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, ImagePlus, Plus, RefreshCw, Star, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { uploadProductImage } from '@/services/upload.service';
-import type { Review } from '@/types';
+import type { Product, Review } from '@/types';
 
 interface ReviewDraft {
   productId: string;
@@ -37,7 +38,9 @@ function Field({ label, help, children }: { label: string; help: string; childre
 }
 
 export default function AdminReviews() {
+  const [searchParams] = useSearchParams();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [filter, setFilter] = useState<'all' | 'published' | 'hidden' | 'featured'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -57,6 +60,28 @@ export default function AdminReviews() {
   };
 
   useEffect(() => { void loadReviews(); }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    import('@/lib/supabase/db')
+      .then(({ getAdminProducts }) => getAdminProducts())
+      .then((rows) => { if (mounted) setProducts(rows); })
+      .catch(() => undefined);
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    const productId = searchParams.get('productId');
+    if (!productId) return;
+    const product = products.find((p) => p.id === productId);
+    setDraft((current) => ({
+      ...current,
+      productId,
+      productName: product?.name || productId,
+      isFeatured: false,
+    }));
+    setIsCreating(true);
+  }, [products, searchParams]);
 
   const filteredReviews = useMemo(() => {
     if (filter === 'published') return reviews.filter((r) => r.isApproved);
@@ -139,7 +164,7 @@ export default function AdminReviews() {
         <div className="studio-card p-5 sm:p-7 space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Customer display name" help="Shown on the public reviews page. Example: Yasmine S."><input className="studio-input" value={draft.customerName} onChange={(e) => updateDraft('customerName', e.target.value)} /></Field>
-            <Field label="Product or context" help="Example: NEXORA Signature Tee or NEXORA Experience."><input className="studio-input" value={draft.productName} onChange={(e) => updateDraft('productName', e.target.value)} /></Field>
+            <Field label="Product review belongs to" help="Choose a product so its rating appears on the product page. Use Brand Experience for general store reviews."><select className="studio-input" value={draft.productId} onChange={(e) => { const value = e.target.value; const product = products.find((p) => p.id === value); updateDraft('productId', value); updateDraft('productName', product?.name || 'NEXORA Experience'); }}><option value="brand">Brand Experience / General Review</option>{products.map((product) => <option key={product.id} value={product.id}>{product.name} — {product.sku}</option>)}</select></Field>
             <Field label="Title" help="Short headline. Optional but useful for scanning."><input className="studio-input" value={draft.title} onChange={(e) => updateDraft('title', e.target.value)} /></Field>
             <Field label="Rating" help="Supports 0.5 increments from 0.5 to 5."><select className="studio-input" value={draft.rating} onChange={(e) => updateDraft('rating', Number(e.target.value))}>{ratingOptions.map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}</select></Field>
             <Field label="Review text" help="Write a real, clear customer note. Avoid fake or exaggerated wording."><textarea className="studio-input" rows={5} value={draft.body} onChange={(e) => updateDraft('body', e.target.value)} /></Field>

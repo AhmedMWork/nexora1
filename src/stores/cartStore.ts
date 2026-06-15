@@ -10,8 +10,8 @@ import { trackEvent } from '@/services/analytics.service';
 interface CartStore {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (productId: string, size: string) => void;
-  updateQuantity: (productId: string, size: string, quantity: number) => void;
+  removeItem: (productId: string, size: string, color?: string) => void;
+  updateQuantity: (productId: string, size: string, quantity: number, color?: string) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -25,14 +25,14 @@ export const useCartStore = create<CartStore>()(
       addItem: (item) => {
         const { items } = get();
         const existingItem = items.find(
-          (i) => i.productId === item.productId && i.size === item.size
+          (i) => i.productId === item.productId && i.size === item.size && (i.color || '') === (item.color || '')
         );
 
-        void trackEvent('add_to_cart', { productId: item.productId, productName: item.name, size: item.size, quantity: item.quantity });
+        void trackEvent('add_to_cart', { productId: item.productId, productName: item.name, size: item.size, color: item.color, quantity: item.quantity });
         if (existingItem) {
           set({
             items: items.map((i) =>
-              i.productId === item.productId && i.size === item.size
+              i.productId === item.productId && i.size === item.size && (i.color || '') === (item.color || '')
                 ? { ...i, quantity: i.quantity + item.quantity }
                 : i
             ),
@@ -42,24 +42,24 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      removeItem: (productId, size) => {
-        const removed = get().items.find((i) => i.productId === productId && i.size === size);
-        if (removed) void trackEvent('remove_from_cart', { productId, productName: removed.name, size, quantity: removed.quantity });
+      removeItem: (productId, size, color) => {
+        const removed = get().items.find((i) => i.productId === productId && i.size === size && (i.color || '') === (color || ''));
+        if (removed) void trackEvent('remove_from_cart', { productId, productName: removed.name, size, color: removed.color, quantity: removed.quantity });
         set({
           items: get().items.filter(
-            (i) => !(i.productId === productId && i.size === size)
+            (i) => !(i.productId === productId && i.size === size && (i.color || '') === (color || ''))
           ),
         });
       },
 
-      updateQuantity: (productId, size, quantity) => {
+      updateQuantity: (productId, size, quantity, color) => {
         if (quantity <= 0) {
-          get().removeItem(productId, size);
+          get().removeItem(productId, size, color);
           return;
         }
         set({
           items: get().items.map((i) =>
-            i.productId === productId && i.size === size
+            i.productId === productId && i.size === size && (i.color || '') === (color || '')
               ? { ...i, quantity }
               : i
           ),

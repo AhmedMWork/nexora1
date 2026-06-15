@@ -153,6 +153,8 @@ function rowToOrder(row: Record<string, any>, items: any[] = []): Order {
       slug: item.slug || '',
       price: Number(item.unit_price || item.price || 0),
       size: item.size || '',
+      color: item.color || item.selected_color_name || '',
+      colorHex: item.color_hex || item.selected_color_hex || undefined,
       quantity: Number(item.quantity || 1),
       image: item.image || '',
     })),
@@ -395,7 +397,7 @@ export async function getCouponByCode(code: string): Promise<Coupon | null> {
   return data ? rowToCoupon(data) : null;
 }
 
-export async function validateCouponForCart(payload: { code: string; items: Array<{ productId: string; size: string; quantity: number }>; subtotal: number }): Promise<{ valid: boolean; code?: string; discount: number; freeShipping?: boolean; message: string }> {
+export async function validateCouponForCart(payload: { code: string; items: Array<{ productId: string; size: string; color?: string; quantity: number }>; subtotal: number }): Promise<{ valid: boolean; code?: string; discount: number; freeShipping?: boolean; message: string }> {
   const { data, error } = await supabase.functions.invoke('validate-coupon', { body: payload });
   if (error) return { valid: false, discount: 0, message: 'Coupon could not be validated.' };
   return data as { valid: boolean; code?: string; discount: number; freeShipping?: boolean; message: string };

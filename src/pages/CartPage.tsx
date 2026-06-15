@@ -51,7 +51,7 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-4">
               {items.map((item, i) => (
                 <motion.div
-                  key={`${item.productId}-${item.size}`}
+                  key={`${item.productId}-${item.size}-${item.color || 'default'}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
@@ -68,26 +68,26 @@ export default function CartPage() {
                     <Link to={`/product/${item.slug}`} className="text-sm font-semibold text-[#f4f0e8] hover:text-[#c8a96a] transition-colors block truncate">
                       {item.name}
                     </Link>
-                    <p className="text-xs text-[#8a8175] mt-1">Size: {item.size}</p>
+                    <div className="mt-1 space-y-1 text-xs text-[#8a8175]"><p>Size: {item.size}</p>{item.color && <p className="flex items-center gap-2">Color: <span className="inline-flex h-3 w-3 rounded-full border border-white/20" style={{ background: item.colorHex || undefined, backgroundImage: item.colorPattern || undefined }} /> {item.color}</p>}</div>
                     <p className="text-sm font-bold text-[#c8a96a] mt-1">{formatPrice(item.price)}</p>
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-0">
                         <button
-                          onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1, item.color)}
                           className="w-7 h-7 flex items-center justify-center border border-[#202024] text-[#b8b0a3] hover:border-[#6f675d]"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
                         <span className="w-8 h-7 flex items-center justify-center border-t border-b border-[#202024] text-xs">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1, item.color)}
                           className="w-7 h-7 flex items-center justify-center border border-[#202024] text-[#b8b0a3] hover:border-[#6f675d]"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
                       <button
-                        onClick={() => removeItem(item.productId, item.size)}
+                        onClick={() => removeItem(item.productId, item.size, item.color)}
                         className="p-1.5 text-[#8a8175] hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

@@ -14,7 +14,7 @@ import SplashScreen from '@/components/ui/SplashScreen';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { ThemeProvider } from '@/providers/ThemeProvider';
 import { I18nProvider } from '@/i18n/I18nProvider';
-import ErrorBoundary from '@/components/system/ErrorBoundary';
+import ErrorBoundary from './components/system/ErrorBoundary';
 import { trackEvent } from '@/services/analytics.service';
 
 // ─── Lazy-loaded Pages ───

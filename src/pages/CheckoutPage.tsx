@@ -77,7 +77,7 @@ export default function CheckoutPage() {
       const result = await validateCouponForCart({
         code: couponCode,
         subtotal,
-        items: items.map((item) => ({ productId: item.productId, size: item.size, quantity: item.quantity })),
+        items: items.map((item) => ({ productId: item.productId, size: item.size, color: item.color, quantity: item.quantity })),
       });
       if (!result.valid) {
         setAppliedCoupon(null);
@@ -122,6 +122,8 @@ export default function CheckoutPage() {
           slug: item.slug,
           price: item.price,
           size: item.size,
+          color: item.color,
+          colorHex: item.colorHex,
           quantity: item.quantity,
           image: item.image,
         })),
@@ -307,11 +309,11 @@ export default function CheckoutPage() {
                 <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-[#f4f0e8] mb-5">{t('checkout.orderSummary')}</h3>
                 <div className="space-y-3 mb-5 max-h-60 overflow-y-auto">
                   {items.map((item) => (
-                    <div key={`${item.productId}-${item.size}`} className="flex gap-3">
+                    <div key={`${item.productId}-${item.size}-${item.color || 'default'}`} className="flex gap-3">
                       <img src={item.image} alt={item.name} className="w-12 h-12 object-cover bg-[#050505]" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[#f4f0e8] truncate">{item.name}</p>
-                        <p className="text-[10px] text-[#8a8175]">Size: {item.size} x{item.quantity}</p>
+                        <p className="text-[10px] text-[#8a8175]">Size: {item.size}{item.color ? ` / Color: ${item.color}` : ''} x{item.quantity}</p>
                       </div>
                       <span className="text-xs text-[#b8b0a3]">{formatPrice(item.price * item.quantity)}</span>
                     </div>

@@ -12,6 +12,7 @@ import SectionReveal from '@/components/ui/SectionReveal';
 import type { Product } from '@/types';
 import { loadProducts } from '@/services/productService';
 import { PRODUCT_CATEGORIES, PRODUCT_SIZES, PRODUCT_COLORS, SORT_OPTIONS, PRICE_RANGES } from '@/lib/constants';
+import { normalizeColor } from '@/lib/productOptions';
 
 export default function ShopPage() {
   const { category } = useParams<{ category?: string }>();
@@ -72,7 +73,7 @@ export default function ShopPage() {
     // Color filter
     if (selectedColors.length > 0) {
       result = result.filter((p) =>
-        p.colors.some((c) => selectedColors.includes(c))
+        p.colors.some((c) => selectedColors.includes(normalizeColor(c)?.id || String(c)))
       );
     }
 

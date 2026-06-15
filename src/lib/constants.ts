@@ -87,8 +87,6 @@ export const ADMIN_NAV_LINKS = [
   { label: 'Limited Drops', href: '/nexora-admin/drops', icon: 'CalendarClock' },
   { label: 'Reviews', href: '/nexora-admin/reviews', icon: 'Star' },
   { label: 'Analytics', href: '/nexora-admin/analytics', icon: 'BarChart3' },
-  { label: 'SEO', href: '/nexora-admin/seo', icon: 'SearchCheck' },
-  { label: 'System Health', href: '/nexora-admin/system-health', icon: 'ShieldCheck' },
 ];
 
 export const BRAND_VALUES = [

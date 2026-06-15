@@ -464,3 +464,27 @@ html.dark .v34-logo-img { filter: brightness(1.14) contrast(1.08) drop-shadow(0 
     .v34-logo-plate * { animation: none !important; transition: none !important; }
   }
 }
+
+/* NEXORA V4.9 Fix — refined Studio palette */
+@layer components {
+  .studio-card {
+    border-color: #2E3442 !important;
+    background: linear-gradient(145deg, #1F2430 0%, #171A21 100%) !important;
+    color: #F5F1EA !important;
+    box-shadow: 0 24px 70px rgba(0,0,0,.30) !important;
+  }
+  .studio-field label { color: #F5F1EA !important; }
+  .studio-help { color: #A7AEBB !important; }
+  .studio-input,
+  .admin-input {
+    border-color: #3A4152 !important;
+    background: #12151B !important;
+    color: #F5F1EA !important;
+  }
+  .studio-input::placeholder,
+  .admin-input::placeholder { color: #737B8A !important; }
+  .studio-input:focus,
+  .admin-input:focus { border-color: #D7B98E !important; box-shadow: 0 0 0 3px rgba(215,185,142,.18) !important; }
+  .studio-chip { border-color: #3A4152 !important; background: #171A21 !important; color: #D6DCE7 !important; }
+  .studio-chip[data-active="true"] { border-color: #D7B98E !important; background: rgba(215,185,142,.14) !important; color: #F5F1EA !important; }
+}

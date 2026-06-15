@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Edit, Eye, GripVertical, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react';
+import { Edit, Eye, GripVertical, Plus, RefreshCw, Trash2, Upload, X, Star as StarIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PRODUCT_COLORS, PRODUCT_SIZES } from '@/lib/constants';
+import { colorToStorage, normalizeColors } from '@/lib/productOptions';
 import { formatPrice, generateSlug } from '@/lib/utils';
 import { uploadProductImage } from '@/services/upload.service';
-import type { Product } from '@/types';
+import type { Product, ProductColor } from '@/types';
 
 type ProductFormMode = 'list' | 'create' | 'edit';
 type CategoryChoice = 'men' | 'women' | 'unisex' | 'custom';
@@ -21,8 +22,10 @@ type ProductDraft = {
   productType: string;
   collection: string;
   imageUrls: string[];
-  colors: string[];
-  customColor: string;
+  colors: ProductColor[];
+  customColorName: string;
+  customColorHex: string;
+  customColorPattern: string;
   materials: string;
   sku: string;
   tags: string;
@@ -49,8 +52,10 @@ const emptyDraft: ProductDraft = {
   productType: 'T-Shirts',
   collection: 'core',
   imageUrls: [],
-  colors: ['black'],
-  customColor: '',
+  colors: [{ id: 'black', name: 'Black', nameEn: 'Black', nameAr: 'أسود', hex: '#0E0B0A', available: true }],
+  customColorName: '',
+  customColorHex: '#D2B48C',
+  customColorPattern: '',
   materials: 'Premium Cotton Blend',
   sku: '',
   tags: 'premium, essentials',
@@ -128,8 +133,10 @@ export default function AdminProducts() {
       productType: product.tags.find((tag) => productTypes.includes(tag)) || 'T-Shirts',
       collection: product.collection || 'core',
       imageUrls: product.images || [],
-      colors: product.colors || [],
-      customColor: '',
+      colors: normalizeColors(product.colors),
+      customColorName: '',
+      customColorHex: '#D2B48C',
+      customColorPattern: '',
       materials: product.materials.join(', '),
       sku: product.sku,
       tags: product.tags.join(', '),
@@ -196,7 +203,7 @@ export default function AdminProducts() {
       images: imageList,
       thumbnail: imageList[0],
       sizes: sizeRows,
-      colors: [...new Set([...draft.colors, draft.customColor].map((v) => v.trim()).filter(Boolean))],
+      colors: draft.colors.map(colorToStorage),
       materials: draft.materials.split(',').map((v) => v.trim()).filter(Boolean),
       sku: draft.sku.trim(),
       tags: [...new Set([draft.productType, ...customTags].filter(Boolean))],
@@ -273,7 +280,7 @@ export default function AdminProducts() {
                     <td className="p-4 text-xs font-semibold text-[#D2B48C]">{formatPrice(product.price)}</td>
                     <td className="p-4 text-xs text-[#BCAEA0]">{totalStock} units</td>
                     <td className="p-4 text-xs text-[#BCAEA0]">{product.category}</td>
-                    <td className="p-4"><div className="flex gap-2"><button onClick={() => openEdit(product)} className="text-[#BCAEA0] hover:text-[#D2B48C]"><Edit className="h-4 w-4" /></button><button onClick={() => handleDelete(product.id)} className="text-[#BCAEA0] hover:text-red-300"><Trash2 className="h-4 w-4" /></button></div></td>
+                    <td className="p-4"><div className="flex gap-2"><button onClick={() => openEdit(product)} className="text-[#BCAEA0] hover:text-[#D2B48C]"><Edit className="h-4 w-4" /></button><Link to={`/nexora-admin/reviews?productId=${product.id}`} className="text-[#BCAEA0] hover:text-[#D2B48C]" title="Manage product reviews"><StarIcon className="h-4 w-4" /></Link><button onClick={() => handleDelete(product.id)} className="text-[#BCAEA0] hover:text-red-300"><Trash2 className="h-4 w-4" /></button></div></td>
                   </tr>;
                 })}
               </tbody>
@@ -307,14 +314,29 @@ export default function AdminProducts() {
           </div>
 
           <div className="mt-7 grid gap-5 lg:grid-cols-2">
-            <Field label="Colors" help="Select visible color chips. Add a custom color name if needed.">
+            <Field label="Colors" help="Customers will select one of these colors before adding to cart. Choose from the palette or add a custom HEX/pattern.">
               <div className="flex flex-wrap gap-2">
-                {PRODUCT_COLORS.map((color) => {
-                  const active = draft.colors.includes(color.value);
-                  return <button key={color.value} type="button" data-active={active} className="studio-chip" onClick={() => updateDraft('colors', active ? draft.colors.filter((c) => c !== color.value) : [...draft.colors, color.value])}><span className="h-3 w-3 rounded-full border border-white/20" style={{ background: color.hex }} />{color.label}</button>;
+                {PRODUCT_COLORS.filter((color) => color.value !== 'custom').map((color) => {
+                  const active = draft.colors.some((selected) => selected.id === color.value);
+                  const storedColor: ProductColor = { id: color.value, name: color.label, nameEn: color.label, nameAr: color.labelAr, hex: color.hex, available: true };
+                  return <button key={color.value} type="button" data-active={active} className="studio-chip" onClick={() => updateDraft('colors', active ? draft.colors.filter((c) => c.id !== color.value) : [...draft.colors, storedColor])}><span className="h-3 w-3 rounded-full border border-white/20" style={{ background: color.hex }} />{color.label}</button>;
                 })}
               </div>
-              <input value={draft.customColor} onChange={(e) => updateDraft('customColor', e.target.value)} className="studio-input mt-3" placeholder="Optional custom color name" />
+              <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_130px]">
+                <input value={draft.customColorName} onChange={(e) => updateDraft('customColorName', e.target.value)} className="studio-input" placeholder="Custom color name, e.g. Cocoa Stripe" />
+                <input type="color" value={draft.customColorHex} onChange={(e) => updateDraft('customColorHex', e.target.value)} className="h-[48px] w-full cursor-pointer rounded-2xl border border-[#3A4152] bg-[#12151B] p-2" aria-label="Custom color HEX" />
+              </div>
+              <input value={draft.customColorPattern} onChange={(e) => updateDraft('customColorPattern', e.target.value)} className="studio-input mt-3" placeholder="Optional CSS pattern/gradient. Example: linear-gradient(45deg,#111,#fff)" />
+              <button type="button" className="nexora-button mt-3" onClick={() => {
+                const name = draft.customColorName.trim();
+                if (!name) return toast.error('Write a custom color name first');
+                const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                if (draft.colors.some((c) => c.id === id)) return toast.error('Color already added');
+                updateDraft('colors', [...draft.colors, { id, name, nameEn: name, hex: draft.customColorHex, pattern: draft.customColorPattern || undefined, available: true }]);
+                updateDraft('customColorName', '');
+                updateDraft('customColorPattern', '');
+              }}>Add custom color</button>
+              {draft.colors.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{draft.colors.map((color) => <span key={color.id} className="studio-chip" data-active="true"><span className="h-3 w-3 rounded-full border border-white/20" style={{ background: color.hex, backgroundImage: color.pattern }} />{color.name}<button type="button" onClick={() => updateDraft('colors', draft.colors.filter((c) => c.id !== color.id))} className="ml-1 text-red-200">×</button></span>)}</div>}
             </Field>
 
             <Field label="Sizes and stock" help="Set stock for each size. Put 0 if unavailable.">
